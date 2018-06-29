@@ -1,0 +1,24 @@
+{
+  "name": "slashr-react",
+  "version": "0.1.0",
+  "description": "Slashr react components. Forms, etc...",
+  "main": "Form.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stevenfuzz/slashr-reach.git"
+  },
+  "keywords": [
+    "react",
+    "form",
+    "mobx"
+  ],
+  "author": "Steven Fuzz <stevenfuzz@gmail.com> (http://slashr.io)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/stevenfuzz/slashr-reach/issues"
+  },
+  "homepage": "https://github.com/stevenfuzz/slashr-reach#readme"
+}
