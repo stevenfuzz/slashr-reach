@@ -1299,7 +1299,10 @@ export const SocialInput = inject(["form"])(observer(
 		}
 
 		componentDidMount() {
-
+			if (this.elmt.autoFocus) this.autoFocus();
+		}
+		autoFocus(){
+			setTimeout(()=>{this.elmt.ref.current.focus();},250);
 		}
 		async mentionLoader(type, value, callback){
 			let ret = await this.elmt._props.mentionLoader(type, value);
@@ -1322,6 +1325,7 @@ export const SocialInput = inject(["form"])(observer(
 				onChange: this.elmt._handleChange,
 				onFocus: this.elmt._handleFocus,
 				onBlur: this.elmt._handleBlur,
+				inputRef: this.elmt.ref
 			};
 			nProps.className = "social-input";
 			if(this.elmt.className) nProps.className += ` ${this.elmt.className}`;

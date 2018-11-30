@@ -1535,7 +1535,7 @@ export class SocialText extends React.Component {
 		const reactStringReplace = require('react-string-replace');
 		let text = this.props.value;
 		if(text.indexOf("@[") === -1) return text;
-		let regex = /@\[([a-z\d_]+):([a-z\d_ ]+):([a-z\d_]+)\]/ig;
+		let regex = /@\[([a-z\d_]+):([a-z\d_ ]+):([a-z\d_-]+)\]/ig;
 		// text = reactStringReplace(text, regex, (match, i) => {
 		// 	console.log("mention",match,i);
 		// });
@@ -1545,7 +1545,7 @@ export class SocialText extends React.Component {
 		if(tags && tags.length){
 			tags.forEach((val)=>{
 				let idx = 0;
-				let tagInfo = val.match(/@\[([a-z\d_]+):([a-z\d_ ]+):([a-z\d_]+)\]/i);
+				let tagInfo = val.match(/@\[([a-z\d_]+):([a-z\d_ ]+):([a-z\d_-]+)\]/i);
 				if(tagInfo.length < 4) return;
 				let tag = {
 					match: tagInfo[0],
@@ -2438,7 +2438,6 @@ export class SlashrUiGrid {
 		throw ("REFRESH GRID");
 	}
 	delete() {
-		console.log("GRID DELETE?", this.idx);
 		this._metadata.ui.deleteGrid(this.idx);
 	}
 	addVisiblePage(page, pageKey) {
@@ -2543,13 +2542,9 @@ export class SlashrUiGridSection {
 			// Load First Page
 			if (pages[0] === this.grid.initialPage || (this.section > 1 && this.previousLoaded)) {
 				// throw("SLDKJFLKSDJFLKSJDFH");
-			console.log("Loadpage",pages, this.section);
-
 				this.grid.loadPage(pages[0]);
-				
 			}
 			else {
-				console.log("loadPages",pages);
 				// console.log("9999 Grid Loader Pages", this.grid.initialPage, this.section, this.previousLoaded);
 				// throw("LSKDJFLKSDJFLKSJDF");
 				this.grid.loadPages(pages);
@@ -2868,7 +2863,6 @@ export const _GridSectionLoader = inject("slashr")(observer(
 		render() {
 			if (this.section.shouldRender) {
 				let nextLoader = null;
-				console.log("Next Loader?",this.grid.isLoaded, this.section.num, this.grid.initialSection);
 				if (!this.grid.isLoaded && this.section.num >= (this.grid.initialSection + 1)) {
 					nextLoader = <_GridSectionLoader
 						grid={this.grid}
@@ -2943,7 +2937,6 @@ export const _GridLoader = inject("slashr")(observer(
 					Slashr.utils.dom.scrollTop();
 					//Slashr.utils.dom.scrollTop(this.props.grid.history.offset.top);
 				},300);
-			console.log("grid load");
 			this.grid.load();
 		}
 		componentWillReact() {
@@ -3241,9 +3234,6 @@ export const _Grid = withRouter(inject("slashr")(observer(
 		}
 		sectionRenderer(section) {
 			let secPages = this.grid.getPagesBySection(section);
-
-
-			console.log("sectionRenderer",this.grid.pages);
 			let hasSectionSpacers = false;
 			let secItems = [];
 			let items = [];
@@ -3258,7 +3248,6 @@ export const _Grid = withRouter(inject("slashr")(observer(
 				let pageItems = [];
 				for (let item of this.grid.pages[page]) {
 					pageItems.push(this.itemRenderer(item, this.nextIdx));
-					console.log("itemRenderer",`page${parseInt(page)}`);
 				}
 				items.push(
 					<_GridPage
