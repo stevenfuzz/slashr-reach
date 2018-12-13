@@ -1534,6 +1534,7 @@ export class SocialText extends React.Component {
 	renderText(){
 		const reactStringReplace = require('react-string-replace');
 		let text = this.props.value;
+		if(! text) return text;
 		if(text.indexOf("@[") === -1) return text;
 		let regex = /@\[([a-z\d_]+):([a-z\d_ ]+):([a-z\d_-]+)\]/ig;
 		// text = reactStringReplace(text, regex, (match, i) => {
@@ -1814,6 +1815,35 @@ class BodyPortal extends React.Component {
 		return ReactDOM.createPortal(
 			this.props.children,
 			document.body
+		);
+	}
+}
+
+export class HeadTags extends React.Component {
+	constructor(props) {
+		super(props);
+	}
+	renderTags(){
+		let tags = [];
+		if(! this.props.tags) return false;
+		if(this.props.tags.title) tags.push(<title key="title">{this.props.tags.title}</title>);
+		if(this.props.tags.meta){
+			if(this.props.tags.meta.type) tags.push(<meta key="og:type" property="og:type" content={this.props.tags.meta.type} />);
+			if(this.props.tags.meta.url) tags.push(<meta key="og:url" property="og:url" content={this.props.tags.meta.url} />);
+			if(this.props.tags.meta.siteName) tags.push(<meta key="og:site_name" property="og:site_name" content={this.props.tags.meta.siteName} />);
+			if(this.props.tags.meta.title) tags.push(<meta key="og:title" property="og:title" content={this.props.tags.meta.title} />);
+			if(this.props.tags.meta.description) tags.push(<meta key="og:description" property="og:description" content={this.props.tags.meta.description} />);
+			if(this.props.tags.meta.image) tags.push(<meta key="og:image" property="og:image" content={this.props.tags.meta.image} />);
+			if(this.props.tags.meta.facebookAppId) tags.push(<meta key="fb:app_id" property="fb:app_id" content={this.props.tags.meta.facebookAppId} />);
+			if(this.props.tags.meta.twitterCard) tags.push(<meta key="twitter:card" property="twitter:card" content={this.props.tags.meta.twitterCard} />);
+
+		}
+		return tags;
+	}
+	render() {
+		return ReactDOM.createPortal(
+			this.renderTags(),
+			document.head
 		);
 	}
 }
@@ -2277,7 +2307,7 @@ export class SlashrUiGrid {
 	// }
 	async loadPage(startPage = 1, endPage = null) {
 		if (!endPage) endPage = startPage;
-		if (this._isLoaded) return false;
+		//if (this._isLoaded) return false;
 
 		if (this.items) {
 			startPage = 1;
@@ -2545,11 +2575,8 @@ export class SlashrUiGridSection {
 				this.grid.loadPage(pages[0]);
 			}
 			else {
-				// console.log("9999 Grid Loader Pages", this.grid.initialPage, this.section, this.previousLoaded);
 				// throw("LSKDJFLKSDJFLKSJDF");
 				this.grid.loadPages(pages);
-				
-
 			}
 
 
@@ -2881,7 +2908,7 @@ export const _GridSectionLoader = inject("slashr")(observer(
 					</React.Fragment>
 				);
 			}
-			else if(! this.grid.isLoaded){
+			else if(! this.grid.isLoaded || this.section.num < this.grid.initialSection){
 				let loaderCntrStyle = {};
 				loaderCntrStyle.height = "100vh";
 				if (this.grid.history) {
@@ -2893,6 +2920,7 @@ export const _GridSectionLoader = inject("slashr")(observer(
 					}
 					if (loaderHeight) loaderCntrStyle.height = `${loaderHeight}px`;
 				}
+				console.log("loader style",loaderCntrStyle);
 				return (
 					<Container
 						style={loaderCntrStyle}
@@ -4140,7 +4168,6 @@ export class SlashrAnimator {
 				this._metadata.props[p].range = Math.abs(this._metadata.props[p].to - this._metadata.props[p].from);
 			}
 		}
-		console.log("TODO: Make sure should init ANIMATE INITIALIZED", { ...this._metadata.props });
 	}
 	// Returns an updated style
 	_animateProps(pct) {
@@ -4741,6 +4768,35 @@ export class SlashrStringUtils {
 	}
 	capitalize(w){
 		return w.replace(/^\w/, w => w.toUpperCase());
+	}
+	renderSocialText(text, tagRenderer){
+		if(! text) return text;
+		if(text.indexOf("@[") === -1) return text;
+		let regex = /@\[([a-z\d_]+):([a-z\d_ ]+):([a-z\d_-]+)\]/ig;
+		// text = reactStringReplace(text, regex, (match, i) => {
+		// 	console.log("mention",match,i);
+		// });
+		let tags = text.match(regex);
+		if(! tags || ! tags.length) return text;
+		let mentions = [];
+		if(tags && tags.length){
+			tags.forEach((val)=>{
+				let idx = 0;
+				let tagInfo = val.match(/@\[([a-z\d_]+):([a-z\d_ ]+):([a-z\d_-]+)\]/i);
+				if(tagInfo.length < 4) return;
+				let tag = {
+					match: tagInfo[0],
+					type: tagInfo[1],
+					label: tagInfo[2],
+					value: tagInfo[3]
+				};
+				// console.log("RENDER TAG match",tag.label, i);
+				text = text.replace(tag.match, () => {
+					return tagRenderer(tag.type, tag.value, tag.label, ++idx);
+				});
+			});
+		}
+		return text;
 	}
 }
 export class frak {

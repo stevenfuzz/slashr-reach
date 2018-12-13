@@ -5,12 +5,10 @@ import { decorate, observable, action, computed } from "mobx";
 
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
+import './DayPicker.css'
 // import DayPicker from 'react-day-picker/DayPicker';
-import 'react-day-picker/lib/style.css';
-// import {
-// 	formatDate,
-// 	parseDate,
-// } from 'react-day-picker/moment';
+// import 'react-day-picker/lib/style.css';
+// import { formatDate, parseDate, } from 'react-day-picker/moment'
 
 import { default as ReactSelect } from 'react-select';
 import { default as ReactSelectAsync } from 'react-select/lib/Async';
@@ -1302,7 +1300,12 @@ export const SocialInput = inject(["form"])(observer(
 			if (this.elmt.autoFocus) this.autoFocus();
 		}
 		autoFocus(){
-			setTimeout(()=>{this.elmt.ref.current.focus();},250);
+			setTimeout(()=>{
+				if(! this.elmt.ref.current) return;
+				this.elmt.ref.current.focus();
+			},350);
+			
+			// setTimeout(()=>{this.elmt.ref.current.focus();},250);
 		}
 		async mentionLoader(type, value, callback){
 			let ret = await this.elmt._props.mentionLoader(type, value);
@@ -1573,12 +1576,12 @@ export const DatePicker = inject(["form"])(observer(
 					type: "text"
 				}
 			};
-			let className = "input-container date-picker";
+			let className = "input-container date";
 			if (this.elmt.icon) className += " icon";
 			return (
 				<div className={className}>
 					{this.elmt.icon}
-					<DayPickerInput {...nProps} />
+					<DayPickerInput.default {...nProps} />
 				</div>
 			);
 		}
