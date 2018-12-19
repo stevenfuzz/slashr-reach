@@ -32,6 +32,11 @@
     .menu-slider .menu-slider-item{
         padding:8px 24px 8px 24px;
     }
+    .menu-slider button.menu-slider-button-left,
+	.menu-slider button.menu-slider-button-right
+	{
+		display:none;
+	}
 }
 
 @media only screen and (max-width: 480px) {

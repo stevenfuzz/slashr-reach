@@ -37,6 +37,9 @@ export class Slashr {
 		if (!window._slashrDomain) window._slashrDomain = new Slashr();
 		return window._slashrDomain;
 	}
+	static get Controller(){
+		return SlashrController;
+	}
 	constructor() {
 		console.log("TODO: Test home much memory store uses....");
 		this._metadata = {
@@ -55,6 +58,34 @@ export class Slashr {
 decorate(Slashr, {
 	_metadata: observable
 });
+
+class SlashrController{
+	constructor(domain){
+		this.result = this.rslt = new SlashrControllerActionResultFactory();
+		this.model = this.mdl = {};
+		this.model.domain = this.model.dm = domain;
+
+		console.log("Feed test test test",Object.getOwnPropertyDescriptors(this));
+		
+	}
+}
+class SlashrControllerActionResultFactory{
+	component(component){
+		return new SlashrControllerActionComponentResult(component);
+	}
+}
+class SlashrControllerActionComponentResult{
+	constructor(component){
+		this._metadata = {
+			component: component
+		};
+		this.props = {};
+	}
+	render(){
+		let Component = this._metadata.component;
+		return React.cloneElement(<Component />, this.props);
+	}
+}
 
 class SlashrUi {
 	constructor() {
@@ -2795,7 +2826,7 @@ export const _GridPage = withRouter(
 			else if (!entry.isIntersecting) {
 				this.grid.removeVisiblePage(this.props.page, this.props.pageKey);
 			}
-			this.grid.updateHistory();
+			//this.grid.updateHistory();
 			//this.grid.loadPage(this.page);
 			// this.setState({
 			// 	hidden: (!  entry.isIntersecting)
@@ -4414,7 +4445,7 @@ export class SlashrUtils {
 		this.core = new SlashrCoreUtils();
 		this.date = new SlashrDateUtils();
 		this.array = new SlashrArrayUtils();
-		this.string = new SlashrStringUtils();
+		this.string = this.str = new SlashrStringUtils();
 	}
 }
 export class SlashrDateUtils {
@@ -4500,6 +4531,17 @@ export class SlashrCoreUtils {
 			else if (prop1[keys1[i]] !== prop2[keys1[i]]) return false;
 		}
 		return true;
+	}
+	getFunctionArgumentNames(func){
+		console.log("feed function ",func.prototype.toString());
+		let STRIP_COMMENTS = /(\/\/.*)|(\/\*[\s\S]*?\*\/)|(\s*=[^,\)]*(('(?:\\'|[^'\r\n])*')|("(?:\\"|[^"\r\n])*"))|(\s*=[^,\)]*))/mg;
+		let ARGUMENT_NAMES = /([^\s,]+)/g;
+		let fnStr = func.toString().replace(STRIP_COMMENTS, '');
+		let result = fnStr.slice(fnStr.indexOf('(')+1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
+		return result || [];
+	}
+	getMethodArgumentNames(classObj, methodName){
+		return this.getFunctionArgumentNames(classObj[methodName]);
 	}
 }
 export class SlashrArrayUtils {

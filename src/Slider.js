@@ -377,7 +377,7 @@ export const _Slider = inject("slider")(observer(
 		}
 		render() {
 			let loader = (this.props.loader) ? this.props.loader : <Container>Loading...</Container>;
-
+			if(! this.props.slider.doShow) return null;
 			return (
 				<Container
 					className="slider"
@@ -397,44 +397,45 @@ export const _Slider = inject("slider")(observer(
 					>
 						{this.props.children}
 					</Swipeable> */}
+					
 					<Container
-						hide
-						unmountOnHide
-						onTransition={this.props.slider._handleTransition}
-						transitionToggle={this.props.slider.doShow}
-						transition={{
-							easing: "easeInQuad",
-							enter: {
-								origin: "top left",
-								display:"block",
-								opacity:0,
-								transform:{
-									translate: "10%",
-								}
-							},
-							entering: {
-								opacity:1,
-								transform:{
-									translate: "0%",
-								}
-							},
-							entered: {},
-							exit: {
-								opacity:1,
-								transform:{
-									translate: "0%",
-								}
-							},
-							exiting: {
-								opacity:0,
-								transform:{
-									translate: "-10%",
-								}
-							},
-							exited: {
-								display:"none",
-							}
-						}}
+						// hide
+						// unmountOnHide
+						// onTransition={this.props.slider._handleTransition}
+						// transitionToggle={this.props.slider.doShow}
+						// transition={{
+						// 	easing: "easeInQuad",
+						// 	enter: {
+						// 		origin: "top left",
+						// 		display:"block",
+						// 		opacity:0,
+						// 		transform:{
+						// 			translate: "10%",
+						// 		}
+						// 	},
+						// 	entering: {
+						// 		opacity:1,
+						// 		transform:{
+						// 			translate: "0%",
+						// 		}
+						// 	},
+						// 	entered: {},
+						// 	exit: {
+						// 		opacity:1,
+						// 		transform:{
+						// 			translate: "0%",
+						// 		}
+						// 	},
+						// 	exiting: {
+						// 		opacity:0,
+						// 		transform:{
+						// 			translate: "-10%",
+						// 		}
+						// 	},
+						// 	exited: {
+						// 		display:"none",
+						// 	}
+						// }}
 						className="slider-items-wrapper"
 						ref={this.props.slider.ref.sliderItemsWrapper}
 						style={{
