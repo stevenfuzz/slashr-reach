@@ -1260,8 +1260,25 @@ export const _Element = inject("slashr")(observer(
 		componentDidMount() {
 			if (this.elmt && this.elmt.shouldRender) {
 				this.elmt.handleMount(this.props);
+				if(this.props.scrollToTop) console.log("scrolltop mount",this.props);
+				this.updateRender();	
 			}
 		}
+		updateRender(){
+			if (this.elmt && this.elmt.shouldRender) {
+				if (!this._metadata.hasRendered && this._metadata.isRendered) {
+					if(this.props.scrollToTop) console.log("scrolltop here here here");
+					if (this.props.scrollToTop) setTimeout(() => {
+						Slashr.utils.dom.scrollTop();
+					}, 100);
+					this._metadata.hasRendered = true;
+				}
+				if(this._metadata.isRendered && this.props.scrollTop && !isNaN(this.props.scrollTop)){
+					Slashr.utils.dom.scrollTop(this.props.scrollTop);
+				}
+			}
+		}
+
 		// shouldComponentUpdate(nextProps, nextState) {
 		// 	return (this.elmt) ? true : false;
 		// 	// console.log("element should update",this.elmt.idx, this.elmt.ref.current, nextProps.children);
@@ -1269,17 +1286,7 @@ export const _Element = inject("slashr")(observer(
 		// }
 		componentDidUpdate(prevProps, prevState, snapshot) {
 			if (this.elmt && this.elmt.shouldRender) {
-
-				// Handle initial scroll
-				if (!this._metadata.hasRendered && this._metadata.isRendered) {
-					this._metadata.hasRendered = true;
-					if (this.props.scrollToTop) setTimeout(() => {
-						Slashr.utils.dom.scrollTop();
-					}, 100);
-				}
-				if(this._metadata.isRendered && this.props.scrollTop && !isNaN(this.props.scrollTop)){
-					Slashr.utils.dom.scrollTop(this.props.scrollTop);
-				}
+				this.updateRender();
 
 				//console.log("element componentDidUpdate",this.elmt.className);
 				let update = SlashrUiElement.reducePropUpdates(prevProps, this.props);
