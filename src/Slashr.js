@@ -22,51 +22,237 @@ export class Slashr {
 	static EASE_IN = "easeIn";
 	static EASE_OUT = "easeOut";
 	static EASE_IN_OUT = "easeInOut";
+	constructor() {
+		console.log("TODO: Test home much memory store uses....");
+		this._metadata = {
+			config: {},
+			app: null
+		};
+		this.ui = new SlashrUi();
+		this.utils = new SlashrUtils();
+		this.router = new SlashrRouter();
+	}
 	static get utils() {
 		return new SlashrUtils();
 	};
-	static init(config) {
+	static createApp(options) {
 		let slashr = Slashr.getInstance();
-		slashr.setConfig(config);
+		if(slashr.app) throw("Slashr Error: App already initialized.");
+		slashr.app = new SlashrApp(slashr,options);
+		return slashr.app;
 	};
-	static get ui() {
-		let slashr = Slashr.getInstance();
-		slashr.ui;
-	};
+	// static get ui() {
+	// 	let slashr = Slashr.getInstance();
+	// 	slashr.ui;
+	// };
 	static getInstance() {
 		if (!window._slashrDomain) window._slashrDomain = new Slashr();
 		return window._slashrDomain;
 	}
+	static get instance() {
+		return Slashr.getInstance();
+	}
 	static get Controller(){
 		return SlashrController;
 	}
-	constructor() {
-		console.log("TODO: Test home much memory store uses....");
-		this._metadata = {
-			config: {}
-		};
-		this.ui = new SlashrUi();
-		this.utils = new SlashrUtils();
+	// setConfig(config) {
+	// 	this._metadata.config = config;
+	// }
+	get app(){
+		return this._metadata.app
 	}
-	setConfig(config) {
-		this._metadata.config = config;
+	set app(app){
+		this._metadata.app = app;
+		return this;
 	}
 	get config() {
-		return this._metadata.config
+		return this.app.config
 	}
 }
 decorate(Slashr, {
 	_metadata: observable
 });
 
+class SlashrRouter{
+	constructor(slashr, options = {}){
+		this._routers = {};
+		this._history = null;
+		console.log("router slashr opeiotns",options);
+	}
+	initialize(name, props){
+		if(props.history) this._history = props.history;
+		if(! this._routers[name]) this._routers[name] = new SlashrRouterInstance(this, props);
+		//this._routes[name].update(route, component);
+		return this._routers[name];
+	}
+	update(name, component, props){
+		if(props.history) this._history = props.history;
+		if(! this._routers[name]) return false;
+		this._routers[name].update(component, props);
+	}
+	instanceExists(name){
+		return this._routers[name] ? true : false;
+	}
+	instance(name){
+		if(! this._routers[name]) return false;
+		return this._routers[name];
+	}
+	handleLoading(name){
+		if(! this._routers[name]) return false;
+		return this._routers[name].handleLoading();
+	}
+	handleLoaded(name){
+		if(! this._routers[name]) return false;
+		return this._routers[name].handleLoaded();
+	}
+	get default(){
+		return this.instance("default");
+	}
+	get history(){
+		return this._history;
+	}
+}
+
+class SlashrRouterInstance{
+	_uid = null;
+	_component = null;
+	_location = null;
+	constructor(router, props){
+		this._onLoading = props.onLoading || null;
+		this._onLoaded = props.onLoaded || null;
+	}
+	update(component, props){
+		this._component = component;
+		this._location = props.location || null;
+		let uid = (props.location) ? this._location.pathname + this._location.search : null;
+		if(uid !=- this._uid){
+			console.log("view UPDATE COMPONENT!!!!!!!!!!!!!!!",component, uid, this._uid);
+			this._uid = uid;
+		}
+	}
+	handleLoading(){
+		if(this._onLoading) this._onLoading();
+	}
+	handleLoaded(){
+		if(this._onLoaded) this._onLoaded();
+	}
+	get component(){
+		if(! this._uid) return null;
+		return this._component;
+	}
+	get uid(){
+		return this._uid;
+	}
+	get pathname(){
+		return this._location ? this._location.pathname : null;
+	}
+}
+decorate(SlashrRouterInstance, {
+	// component: computed,
+	_uid: observable
+});
+
+class SlashrAppRouter{
+	constructor(slashr){
+		this._slashr = slashr;
+	}
+	// can also be route, options
+	push(name, route, options = {}){
+		if(typeof name === "object"){
+			options = name;
+			name = null;
+			route = null;
+			if(options.name) name = options.name;
+			if(options.route) route = options.route;
+		}
+		else if(typeof route === "object"){
+			options = route;
+			route = null;
+			if(options.name) name = options.name;
+			if(options.route) route = options.route;
+		}
+		else if(! route){
+			route = name;
+			name = null;
+		}
+		if(! name) name = "default";
+
+		if(! route) throw("Router Push Error: No Route.");
+
+		this._slashr.router.history.push(route);
+		
+	}
+}
+class SlashrApp{
+	constructor(slashr, options){
+		if(! options.config) throw("Slashr Error: No Config.");
+		if(! options.routes) throw("Slashr Error: No Routes.");
+		this._metadata = {
+			model: new SlashrAppModel(options),
+			router: new SlashrAppRouter(slashr, options),
+			config: options.config,
+			routes: options.routes,
+			defaultLayout: options.defaultLayout || null
+		}
+		console.log("Created app:",this._metadata);
+
+	}
+	get router(){
+		return this._metadata.router;
+	}
+	get rtr(){
+		return this._metadata.router;
+	}
+	get model(){
+		return this._metadata.model;
+	}
+	get mdl(){
+		return this.model;
+	}
+	get routes(){
+		console.log("TODO: MOVE THIS OUT OF APP");
+		return this._metadata.routes;
+	}
+	get defaultLayout(){
+		console.log("TODO: MOVE THIS OUT OF APP");
+		return this._metadata.defaultLayout;
+	}
+	get config(){
+		return this._metadata.config;
+	}
+}
+
+class SlashrAppModel{
+	constructor(options){
+		if(! options.domain) throw("Slashr Error: No Domain.");
+		if(! options.ui) throw("Slashr Error: No Ui.");
+		this._metadata = {
+			domain: options.domain,
+			ui: options.ui
+		}
+	}
+	get domain(){
+		return this._metadata.domain;
+	}
+	get dm(){
+		return this.domain;
+	}
+	get ui(){
+		return this._metadata.ui;
+	}
+}
+
 class SlashrController{
 	constructor(domain){
 		this.result = this.rslt = new SlashrControllerActionResultFactory();
-		this.model = this.mdl = {};
-		this.model.domain = this.model.dm = domain;
-
-		console.log("Feed test test test",Object.getOwnPropertyDescriptors(this));
-		
+		// this._slashr = Slashr.getInstance();
+	}
+	get model(){
+		console.log("GET THE MODEL",Slashr.getInstance().app.mdl);
+		return Slashr.getInstance().app.mdl;
+	}
+	get mdl(){
+		return this.model;
 	}
 }
 class SlashrControllerActionResultFactory{
