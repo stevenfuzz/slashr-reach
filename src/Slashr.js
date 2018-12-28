@@ -77,16 +77,30 @@ class SlashrRouter{
 	constructor(slashr, options = {}){
 		this._routers = {};
 		this._history = null;
+		this._location = null;
+		this._isInitialized = false;
+		this._activeRouterName = "default";
 		console.log("router slashr opeiotns",options);
 	}
-	initialize(name, props){
-		if(props.history) this._history = props.history;
-		if(! this._routers[name]) this._routers[name] = new SlashrRouterInstance(this, props);
+	initialize(options){
+		if(! options.location) throw("Router error: No location."); 
+		if(! options.history) throw("Router error: No history."); 
+		this._location = options.location;
+		this._history = options.history;
+		if(options.location.state && options.location.state.router) this._activeRouterName = options.location.state.router;
+		console.log("router lskdjf sldkjf lskdjf");
+		console.log("router location",options);
+		//throw("LSKDJFJFLKJFH");
+	}
+	create(name, props){
+		if(! this._routers[name]) this._routers[name] = new SlashrRouterInstance(this, name, props);
 		//this._routes[name].update(route, component);
 		return this._routers[name];
 	}
+	hasRoute(name){
+		return this._routers[name]._location ? true : false;
+	}
 	update(name, component, props){
-		if(props.history) this._history = props.history;
 		if(! this._routers[name]) return false;
 		this._routers[name].update(component, props);
 	}
@@ -110,11 +124,9 @@ class SlashrRouter{
 		for(let router in this._routers){
 			if(! this._routers[router].location) continue;
 
-			ret[router] = {
-				pathname: this._routers[router].location.pathname
-			};
-			if(this._routers[router].location.search) ret[router].search = this._routers[router].location.search;
-			if(this._routers[router].location.state) ret[router].state = this._routers[router].location.state;
+			ret[router] = this._routers[router].location
+			//if(this._routers[router].location.search) ret[router].search = this._routers[router].location.search;
+			//if(this._routers[router].location.state) ret[router].state = this._routers[router].location.state;
 		}
 		return ret;
 	}
@@ -124,22 +136,95 @@ class SlashrRouter{
 	get history(){
 		return this._history;
 	}
+	get location(){
+		return this._location;
+	}
+	get routers(){
+		return this._routers;
+	}
+	get activeRouterName(){
+		return this._activeRouterName;
+	}
 }
 
 class SlashrRouterInstance{
 	_uid = null;
 	_component = null;
 	_location = null;
-	constructor(router, props){
+	constructor(router, name, props){
+		this._name = name;
+		this._router = router;
 		this._onLoading = props.onLoading || null;
 		this._onLoaded = props.onLoaded || null;
+		this._location = this.parseLocation();
+	}
+	parseLocation(){
+		let ret = null;
+		let location = this._router.location;
+		let useDefault = this._name === "default";
+		if(location.state && location.state.routers && location.state.routers){
+			if(location.state.router !== this._name){
+				useDefault = false;
+				for(let name in location.state.routers){
+					if(name === this._name){
+						ret = location.state.routers[name];
+					}
+				}
+			}
+			else useDefault = true;
+		}
+		if(! ret && useDefault){
+			ret = {
+				pathname: location.pathname,
+				// state: location.state,
+				// search: location.search
+			};
+			if(location.state){
+				//alert("filter state");
+				ret.state = location.state;
+			}
+			if(location.search) ret.search = location.search;
+
+		}
+
+		return ret;
 	}
 	update(component, props){
 		this._component = component;
-		this._location = props.location || null;
-		let uid = (props.location) ? this._location.pathname + this._location.search : null;
+		this._location = null;
+		this._routerName = (props.location.state && props.location.state.router) || "default";
+		if(props.location){
+			let location = null;
+			if(props.location.state && props.location.state.router){
+				if(props.location.state.router === this._name){
+					// do nothing
+				}
+				else if(props.location.state.router !== this._name && props.location.state.routers){
+					for(let name in props.location.state.routers){
+						if(name === this._name){
+							this._location = props.location.state.routers[name];
+						}
+					}
+					
+				}
+			}
+			if(! this._location){
+				this._location = {
+					pathname: props.location.pathname,
+					// state: props.location.state,
+					// search: props.location.search
+				};
+				if(props.location.state){
+					//alert("filter state");
+					this._location.state = props.location.state;
+				}
+				if(props.location.search) this._location.search = props.location.search;
+			}
+		}
+		console.log("ROUTER UPDATE LOCATION",this._name, this._location);
+		let uid = (this._location) ? this._location.pathname + this._location.search : null;
 		if(uid !=- this._uid){
-			console.log("view UPDATE COMPONENT!!!!!!!!!!!!!!!",component, uid, this._uid);
+			console.log("ROUTER UPDATE UID",this._name, uid);
 			this._uid = uid;
 		}
 	}
@@ -156,11 +241,17 @@ class SlashrRouterInstance{
 	get location(){
 		return this._location;
 	}
+	get state(){
+		
+	}
 	get uid(){
 		return this._uid;
 	}
 	get pathname(){
 		return this._location ? this._location.pathname : null;
+	}
+	get isInitialized(){
+		return this._uid ? true : false;
 	}
 }
 decorate(SlashrRouterInstance, {
@@ -196,7 +287,7 @@ class SlashrAppRouter{
 		if(! router) router = "default";
 		if(! route) throw("Router Push Error: No Route.");
 
-		console.log("push route",JSON.stringify(this._slashr.router.instance("default").location),this._slashr.router,router,route,options);
+		console.log("push route",this._slashr.router.instance("default").location,this._slashr.router,router,route,options);
 
 
 		let historyState = {};
@@ -205,7 +296,7 @@ class SlashrAppRouter{
 		if(routers[router]) delete routers[router];
 		if(Object.keys(routers).length) historyState.routers = routers
 		
-		console.log("routers?",route,historyState);
+		console.log("router push to histoiry?",route,historyState);
 
 		this._slashr.router.history.push(route, historyState);
 		
@@ -2404,6 +2495,7 @@ export const _Calendar = inject("slashr")(observer(
 
 export class SlashrUiGrid {
 	constructor(slashrUi, idx, props) {
+		
 		this._metadata = {
 			ui: slashrUi,
 			idx: idx,
@@ -2417,9 +2509,13 @@ export class SlashrUiGrid {
 			ref: props.forwardRef || React.createRef(),
 			eventHandlers: {}
 		};
+		
 		this.initialize(props);
 	}
 	initialize(props, reset = false) {
+		this._slashr = props.slashr;
+		this._route = props.route;
+		this._router = this._slashr.router;
 		this._lastPage = 0;
 		//this._isLoadingNext = false;
 		this._isLoaded = false;
@@ -2436,10 +2532,10 @@ export class SlashrUiGrid {
 		// this._metadata.initialPage = props.page || 1;
 		this._resultsPerPage = props.resultsPerPage || null;
 		this._pagesPerSection = props.pagesPerSection || 1;
-		this._metadata.router = (props.history && props.location) ? {
-			history: props.history,
-			location: props.location
-		} : null;
+		// this._metadata.router = (props.history && props.location) ? {
+		// 	history: props.history,
+		// 	location: props.location
+		// } : null;
 		// if (this._stateProps && this._stateProps.name) {
 		// 	console.log("grid check name", props.name, this.name);
 		//}
@@ -2459,7 +2555,8 @@ export class SlashrUiGrid {
 			switch (historyAction) {
 				case "POP":
 					if (props.location.state && props.location.state._slashrUiGrid) {
-						let historyState = JSON.parse(props.location.state._slashrUiGrid);
+						console.log("slashr ui grid",props.location.state._slashrUiGrid);
+						let historyState = props.location.state._slashrUiGrid;
 						// console.log("grid test history loca",props.location);
 						if (historyState.grids[this.name]) {
 							this._metadata.history = historyState.grids[this.name];
@@ -2494,7 +2591,7 @@ export class SlashrUiGrid {
 
 	}
 	updateHistory() {
-		if(! this.router) return;
+		if(! this._route) return;
 
 		let lastVisiblePage = 0;
 		for(let page in this._metadata.visiblePages){
@@ -2514,8 +2611,8 @@ export class SlashrUiGrid {
 		}
 
 		// let section = this.props.grid.sections[this.props.section];
-		let state = this.router.location.state || {};
-		let gridState = (state._slashrUiGrid) ? (JSON.parse(state._slashrUiGrid) || {grid:{}}) : {grids:{}};
+		let state = this._route.location.state || {};
+		let gridState = (state._slashrUiGrid) ? (state._slashrUiGrid || {grid:{}}) : {grids:{}};
 		let scrollY = window.scrollY;
 		// // Check if already in history
 		if (! gridState.grids[this.name] || gridState.grids[this.name].page !== lastVisiblePage){
@@ -2543,10 +2640,16 @@ export class SlashrUiGrid {
 		gridState.scrollY = scrollY;
 		
 		// console.log("grid handle intersect state", this.props.section, section.ref.current, gridState[this.name]);
-		state._slashrUiGrid = JSON.stringify(gridState);
-		let location = this.router.location;
+		state._slashrUiGrid = gridState;
+
+		console.log("GRID NEW STATE ",state);
+
+
+		let location = this._slashr.router.location;
 		location.state = state;
-		if(! this.isDisabled) this.router.history.replace(location);
+		console.log("GRID NEW STATE LOC",location);
+		// throw("LKJSDFH");
+		// if(! this.isDisabled) this.router.history.replace(location);
 
 	}
 
@@ -2688,9 +2791,12 @@ export class SlashrUiGrid {
 	get initialScrollY() {
 		return this._metadata.initialScrollY;
 	}
-	get router() {
-		return this._metadata.router;
-	}
+	// get route() {
+	// 	return this._metadata.route;
+	// }
+	// get slashr() {
+	// 	return this._metadata.slashr;
+	// }
 	get lastPage() {
 		return this._lastPage;
 	}
@@ -3288,7 +3394,7 @@ export const _GridLoader = inject("slashr")(observer(
 			return (
 				<Container
 					className="grid-loader"
-					onWindowScroll={(this.grid.router) ? this.handleWindowScroll : null}
+					onWindowScroll={this.handleWindowScroll}
 				>
 					{sectionLoaders}
 				</Container>
@@ -3390,21 +3496,21 @@ export const _GridLoader = inject("slashr")(observer(
 	}
 ));
 
-export class Grid extends React.Component {
-	render() {
-		return (
-			<Provider slashr={Slashr.getInstance()}>
-				<_Grid
-					{...this.props}
-				>
-					{this.props.children}
-				</_Grid>
-			</Provider>
-		);
-	}
-}
-export const _Grid = withRouter(inject("slashr")(observer(
-	class _Grid extends React.Component {
+// export class Grid extends React.Component {
+// 	render() {
+// 		return (
+// 			<Provider slashr={Slashr.getInstance()}>
+// 				<_Grid
+// 					{...this.props}
+// 				>
+// 					{this.props.children}
+// 				</_Grid>
+// 			</Provider>
+// 		);
+// 	}
+// }
+export const Grid = inject("slashr")(observer(
+	class Grid extends React.Component {
 		constructor(props) {
 			super(props);
 			this.handleWindowResize = this.handleWindowResize.bind(this);
@@ -3632,24 +3738,24 @@ export const _Grid = withRouter(inject("slashr")(observer(
 			);
 		}
 	}
-)));
+));
 
-export class MasonaryGrid extends React.Component {
-	render() {
-		return (
-			<Provider slashr={Slashr.getInstance()}>
-				<_MasonaryGrid
-					{...this.props}
-				>
-					{this.props.children}
-				</_MasonaryGrid>
-			</Provider>
-		);
-	}
-}
+// export class MasonaryGrid extends React.Component {
+// 	render() {
+// 		return (
+			
+// 				<_MasonaryGrid
+// 					{...this.props}
+// 				>
+// 					{this.props.children}
+// 				</_MasonaryGrid>
 
-export const _MasonaryGrid = withRouter(inject("slashr")(observer(
-	class _MasonaryGrid extends React.Component {
+// 		);
+// 	}
+// }
+
+export const MasonaryGrid = inject("slashr","route")(observer(
+	class MasonaryGrid extends React.Component {
 		constructor(props) {
 			super(props);
 			this.handleWindowResize = this.handleWindowResize.bind(this);
@@ -3989,7 +4095,7 @@ export const _MasonaryGrid = withRouter(inject("slashr")(observer(
 			);
 		}
 	}
-)));
+));
 
 
 export const DialogButtons = React.forwardRef((props, ref) => (

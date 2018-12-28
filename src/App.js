@@ -4,7 +4,7 @@ import React from 'react';
 import { Provider } from "mobx-react";
 import { BrowserRouter, Route } from 'react-router-dom'
 import { Slashr } from './Slashr';
-import { _RouteController } from './Router';
+import { _Router } from './Router';
 //import './Main.css';
 
 
@@ -40,7 +40,7 @@ export class App extends React.Component {
             return(
                 <Provider app={this.app} slashr={Slashr.getInstance()}>
                     <BrowserRouter>	
-                        <Route component={_RouteController} />
+                        <Route component={_Router} />
                         {/* <Router 
                             app={this.app}
                             onLoading={()=>{
