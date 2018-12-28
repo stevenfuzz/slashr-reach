@@ -3,7 +3,7 @@ import React from 'react';
 import { observer, inject } from 'mobx-react';
 //import './Main.css';
 import { Route, Switch, withRouter, matchPath, BrowserRouter } from 'react-router-dom';
-// import { Dialog, DialogButtons, Container, Image } from 'slashr-react';
+import { Dialog } from './Slashr';
 // import {Slashr} from 'slashr-react';
 
 // import IconButton from "../controls/IconButton";
@@ -42,7 +42,7 @@ export const Router = inject("slashr")(observer(
             // console.log("RENDER ROUTER");
             // let component = null;
             // let route = null; 
-			// for(let route of this.routes){
+			// for(let route of this.routePropss){
 			// 	if(route.controller){
 			// 		let match = matchPath(this.props.location.pathname, route.path);
 			// 		if(match && match.isExact){
@@ -60,7 +60,7 @@ export const Router = inject("slashr")(observer(
             
 			
 			// var hasMatch = false;
-			// const routeComponents = this.routes.map(({controller, action,layout,path, key, component, dialog, reload}) => {
+			// const routeComponents = this.routePropss.map(({controller, action,layout,path, key, component, dialog, reload}) => {
 			// 	if(this.isDialogRoute && dialog){
 			// 		console.log("post dialog path",path);
 			// 		return null;
@@ -235,34 +235,34 @@ export const RouteLink = inject("slashr")(observer(
 		constructor(props){
 			super(props);
 			this.handleClick = this.handleClick.bind(this);
-			
-			this.pathname = null;
-			this.router = this.props.router || "default";
-			//this.route = null;
-			this.routeState = {};
-			console.log("route link props",props);
-			this.routeState = {};
+			this.routeProps = {
+				route: this.props.route || null,
+				router: this.props.router || "default"
+			};
+			//this.pathname = null;
+			//this.routeProps.router = this.props.router || "default";
+			//this.routeProps = null;
+
 			if(! this.props.to) throw("Route Link Error: No to.");
 			if(typeof this.props.to === 'object'){
-				if(this.props.to.pathname) this.pathname = this.props.to.pathname;
+				if(this.props.to.pathname) this.routeProps.route = this.props.to.pathname;
+				else if(this.props.to.route) this.routeProps.route = this.props.to.route;
 				if(this.props.to.router){
-					this.router = this.props.to.router;
+					this.routeProps.router = this.props.to.router;
 				}
 			}
-			else this.pathname = this.props.to;
-			if(! this.pathname) throw("Route Link Error: No pathname.");
+			else this.routeProps.route = this.props.to;
+			if(! this.routeProps.route) throw("Route Link Error: No pathname.");
 
 		}
 		handleClick(e){
-			console.log("route linke",this.router,this.routeState,this.pathname);
-			if(this.router) alert(this.router);
 			e.preventDefault();
 			e.stopPropagation();
-			// this.props.slashr.app.router.push(this.pathname);
+			this.props.slashr.app.router.push(this.routeProps);
 		}
 		render(){
 			return (
-				<a href={this.pathname} onClick={this.handleClick}>{this.props.children}</a>
+				<a href={this.routeProps.route} onClick={this.handleClick}>{this.props.children}</a>
 			);
 		}
 	}
@@ -280,13 +280,16 @@ const ContentRoute = withRouter(inject("domain")(observer(
 	}
 )));
 
-const RouteDialog = withRouter(inject("slashr")(observer(
+export const RouteDialog = inject("slashr")(observer(
 	class RouteDialog extends React.Component {
 		constructor(props){
 			super(props);
 			this.handleClose = this.handleClose.bind(this);
 			this.handleClickClose = this.handleClickClose.bind(this);
+			this.name = this.props.name || "dialog";
 			this.location = this.props.location;
+			this.slashr = this.props.slashr;
+			this.routePropsr = this.slashr.router.initialize(this.name, this.props);
 			// if(this.dialog){
 			// 	this.props.app.mdl.ui.dialog.open(this.dialog,{
 			// 		component: this.props.component,
@@ -298,7 +301,11 @@ const RouteDialog = withRouter(inject("slashr")(observer(
 			// }
         }
         get isOpen() {
-			return this.props.app.mdl.ui.dialog.isOpen("route");
+
+			
+
+			return false;
+			//return this.props.app.mdl.ui.dialog.isOpen("route");
 		}
         get shouldOpen(){
             return (! this.isOpen && ! this.shouldClose);
@@ -312,10 +319,10 @@ const RouteDialog = withRouter(inject("slashr")(observer(
 				&& (! this.location || this.props.location.pathname !== this.location.pathname)) ? true : false;
 		}
         close(){
-            this.props.app.mdl.ui.dialog.close("route");
+            //this.props.app.mdl.ui.dialog.close("route");
         }
         open(){
-            this.props.app.mdl.ui.dialog.open("route");
+            //this.props.app.mdl.ui.dialog.open("route");
         }
         handleUpdate(){
             if(this.shouldClose) this.close();
@@ -350,20 +357,20 @@ const RouteDialog = withRouter(inject("slashr")(observer(
 		render() {
             let routeDialogComponents = null;
 			if(! this.shouldClose){
-				routeDialogComponents = this.routes.map(({path, key, component, dialog, reload}) => {
-					if(dialog){
+				// routeDialogComponents = this.routePropss.map(({path, key, component, dialog, reload}) => {
+				// 	if(dialog){
 
-						// Set key?
-						return <Route exact path={path} key={key || path} render={(props)=>{
-							let Component = component;
-							return <Component 
-									isDialog 
-									{...props}
-								/>;
-						}}/>
-					}
-					return null;
-				});
+				// 		// Set key?
+				// 		return <Route exact path={path} key={key || path} render={(props)=>{
+				// 			let Component = component;
+				// 			return <Component 
+				// 					isDialog 
+				// 					{...props}
+				// 				/>;
+				// 		}}/>
+				// 	}
+				// 	return null;
+				// });
 			}
 			return (
 				<Dialog
@@ -371,20 +378,21 @@ const RouteDialog = withRouter(inject("slashr")(observer(
 					backdropClassName="dialog-backdrop-view"
 					open={this.isOpen}
 					onClose={this.handleClose}
-					closeButton={<IconButton icon="close" size="medium" type="close" />}
+					// closeButton={<IconButton icon="close" size="medium" type="close" />}
 					{...this.props}
 				>
-					<Container className="dialog-view-header">
+					<Router name={this.name} />
+					{/* <Container className="dialog-view-header">
 						<IconButton icon="arrowBack" onClick={this.handleClickClose}>
 							<Image src={headerImage} />
 						</IconButton>
 					</Container>
 					<Switch location={this.props.location}>
 						{routeDialogComponents}
-					</Switch>
+					</Switch> */}
 					{/* <ProgressIndicator name="routeDialog" /> */}
 				</Dialog>
 			);
 		}
 }
-)));
+));

@@ -105,6 +105,19 @@ class SlashrRouter{
 		if(! this._routers[name]) return false;
 		return this._routers[name].handleLoaded();
 	}
+	getHistoryState(){
+		let ret = {};
+		for(let router in this._routers){
+			if(! this._routers[router].location) continue;
+
+			ret[router] = {
+				pathname: this._routers[router].location.pathname
+			};
+			if(this._routers[router].location.search) ret[router].search = this._routers[router].location.search;
+			if(this._routers[router].location.state) ret[router].state = this._routers[router].location.state;
+		}
+		return ret;
+	}
 	get default(){
 		return this.instance("default");
 	}
@@ -140,6 +153,9 @@ class SlashrRouterInstance{
 		if(! this._uid) return null;
 		return this._component;
 	}
+	get location(){
+		return this._location;
+	}
 	get uid(){
 		return this._uid;
 	}
@@ -157,29 +173,41 @@ class SlashrAppRouter{
 		this._slashr = slashr;
 	}
 	// can also be route, options
-	push(name, route, options = {}){
-		if(typeof name === "object"){
-			options = name;
-			name = null;
+	push(router, route, options = {}){
+
+		console.log("push route 123",router,route,options,typeof router);
+
+		if(typeof router === "object"){
+			options = router;
+			router = null;
 			route = null;
-			if(options.name) name = options.name;
+			if(options.router) router = options.router;
 			if(options.route) route = options.route;
 		}
 		else if(typeof route === "object"){
 			options = route;
 			route = null;
-			if(options.name) name = options.name;
 			if(options.route) route = options.route;
 		}
 		else if(! route){
-			route = name;
-			name = null;
+			route = router;
+			router = null;
 		}
-		if(! name) name = "default";
-
+		if(! router) router = "default";
 		if(! route) throw("Router Push Error: No Route.");
 
-		this._slashr.router.history.push(route);
+		console.log("push route",JSON.stringify(this._slashr.router.instance("default").location),this._slashr.router,router,route,options);
+
+
+		let historyState = {};
+		if(router !== "default") historyState.router = router;
+		let routers = this._slashr.router.getHistoryState();
+		if(routers[router]) delete routers[router];
+		if(Object.keys(routers).length) historyState.routers = routers
+		
+		console.log("routers?",route,historyState);
+
+		this._slashr.router.history.push(route, historyState);
 		
 	}
 }
