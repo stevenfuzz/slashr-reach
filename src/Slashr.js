@@ -75,7 +75,7 @@ decorate(Slashr, {
 
 class SlashrRouter{
 	constructor(slashr, options = {}){
-		this._routers = {};
+		this._views = {};
 		this._history = null;
 		this._location = null;
 		this._isInitialized = false;
@@ -93,40 +93,40 @@ class SlashrRouter{
 		//throw("LSKDJFJFLKJFH");
 	}
 	create(name, props){
-		if(! this._routers[name]) this._routers[name] = new SlashrRouterInstance(this, name, props);
+		if(! this._views[name]) this._views[name] = new SlashrRouterView(this, name, props);
 		//this._routes[name].update(route, component);
-		return this._routers[name];
+		return this._views[name];
 	}
 	hasRoute(name){
-		return this._routers[name]._location ? true : false;
+		return this._views[name]._location ? true : false;
 	}
 	update(name, component, props){
-		if(! this._routers[name]) return false;
-		this._routers[name].update(component, props);
+		if(! this._views[name]) return false;
+		this._views[name].update(component, props);
 	}
-	instanceExists(name){
-		return this._routers[name] ? true : false;
+	viewExists(name){
+		return this._views[name] ? true : false;
 	}
-	instance(name){
-		if(! this._routers[name]) return false;
-		return this._routers[name];
+	view(name){
+		if(! this._views[name]) return false;
+		return this._views[name];
 	}
 	handleLoading(name){
-		if(! this._routers[name]) return false;
-		return this._routers[name].handleLoading();
+		if(! this._views[name]) return false;
+		return this._views[name].handleLoading();
 	}
 	handleLoaded(name){
-		if(! this._routers[name]) return false;
-		return this._routers[name].handleLoaded();
+		if(! this._views[name]) return false;
+		return this._views[name].handleLoaded();
 	}
 	getHistoryState(){
 		let ret = {};
-		for(let router in this._routers){
-			if(! this._routers[router].location) continue;
+		for(let view in this._views){
+			if(! this._views[view].location) continue;
 
-			ret[router] = this._routers[router].location
-			//if(this._routers[router].location.search) ret[router].search = this._routers[router].location.search;
-			//if(this._routers[router].location.state) ret[router].state = this._routers[router].location.state;
+			ret[view] = this._views[view].location
+			//if(this._views[router].location.search) ret[router].search = this._views[router].location.search;
+			//if(this._views[router].location.state) ret[router].state = this._views[router].location.state;
 		}
 		return ret;
 	}
@@ -139,15 +139,15 @@ class SlashrRouter{
 	get location(){
 		return this._location;
 	}
-	get routers(){
-		return this._routers;
+	get views(){
+		return this._views;
 	}
-	get activeRouterName(){
+	get activeViewName(){
 		return this._activeRouterName;
 	}
 }
 
-class SlashrRouterInstance{
+class SlashrRouterView{
 	_uid = null;
 	_component = null;
 	_location = null;
@@ -162,12 +162,12 @@ class SlashrRouterInstance{
 		let ret = null;
 		let location = this._router.location;
 		let useDefault = this._name === "default";
-		if(location.state && location.state.routers && location.state.routers){
+		if(location.state && location.state.views && location.state.views){
 			if(location.state.router !== this._name){
 				useDefault = false;
-				for(let name in location.state.routers){
+				for(let name in location.state.views){
 					if(name === this._name){
-						ret = location.state.routers[name];
+						ret = location.state.views[name];
 					}
 				}
 			}
@@ -193,21 +193,21 @@ class SlashrRouterInstance{
 		this._component = component;
 		this._location = null;
 		this._routerName = (props.location.state && props.location.state.router) || "default";
+
+		console.log("HISTORY UPDATE: ",props);
+
 		if(props.location){
 			let location = null;
-			if(props.location.state && props.location.state.router){
-				if(props.location.state.router === this._name){
-					// do nothing
-				}
-				else if(props.location.state.router !== this._name && props.location.state.routers){
-					for(let name in props.location.state.routers){
-						if(name === this._name){
-							this._location = props.location.state.routers[name];
-						}
+			let routerState = (props.location.state && props.location.state._slashr) ? props.location.state._slashr.router : {};
+			if(routerState.views){
+				for(let name in routerState.views){
+					if(name === this._name){
+						this._location = routerState.views[name];
+						console.log("HISTORY UPDATE ROUTER FIGURE OUT LOCATION",this._location);
 					}
-					
 				}
 			}
+			
 			if(! this._location){
 				this._location = {
 					pathname: props.location.pathname,
@@ -216,7 +216,7 @@ class SlashrRouterInstance{
 				};
 				if(props.location.state){
 					//alert("filter state");
-					this._location.state = props.location.state;
+					//this._location.state = props.location.state;
 				}
 				if(props.location.search) this._location.search = props.location.search;
 			}
@@ -244,6 +244,9 @@ class SlashrRouterInstance{
 	get state(){
 		
 	}
+	get name(){
+		return this._name;
+	}
 	get uid(){
 		return this._uid;
 	}
@@ -254,7 +257,7 @@ class SlashrRouterInstance{
 		return this._uid ? true : false;
 	}
 }
-decorate(SlashrRouterInstance, {
+decorate(SlashrRouterView, {
 	// component: computed,
 	_uid: observable
 });
@@ -264,18 +267,14 @@ class SlashrAppRouter{
 		this._slashr = slashr;
 	}
 	// can also be route, options
-	push(router, route, options = {}){
+	_createState(route, options){
 
-		console.log("push route 123",router,route,options,typeof router);
+	}
+	_updateRoute(type, route, options = {}){
+		let view = "default";
+		//console.log("push route 123",router,route,options,typeof router);
 
-		if(typeof router === "object"){
-			options = router;
-			router = null;
-			route = null;
-			if(options.router) router = options.router;
-			if(options.route) route = options.route;
-		}
-		else if(typeof route === "object"){
+		if(typeof route === "object"){
 			options = route;
 			route = null;
 			if(options.route) route = options.route;
@@ -284,22 +283,49 @@ class SlashrAppRouter{
 			route = router;
 			router = null;
 		}
-		if(! router) router = "default";
+		if(options.view) view = options.view;
+
+		console.log("");
+
 		if(! route) throw("Router Push Error: No Route.");
 
-		console.log("push route",this._slashr.router.instance("default").location,this._slashr.router,router,route,options);
-
-
-		let historyState = {};
-		if(router !== "default") historyState.router = router;
-		let routers = this._slashr.router.getHistoryState();
-		if(routers[router]) delete routers[router];
-		if(Object.keys(routers).length) historyState.routers = routers
 		
-		console.log("router push to histoiry?",route,historyState);
+		let routerState = {};
+		if(view !== "default") routerState.view = view;
 
-		this._slashr.router.history.push(route, historyState);
+		let views = this._slashr.router.getHistoryState();
+
+		console.log("ROUTER HISTORY STATA",views);
+
+		if(this._slashr.router.location.pathname !== route && views[view]){
+			delete views[view];
+		}
+		//else throw("TEST ROUTE TEST ROUTE");
 		
+		if(Object.keys(views).length) routerState.views = views;
+
+		let historyState = {
+			_slashr: {
+				router: routerState
+			}
+		};
+		
+		console.log("router push to histoiry?",view,historyState,this._slashr.router.location.pathname,this._slashr.router.location.state,route,historyState);
+
+		switch(type){
+			case "push":
+				this._slashr.router.history.push(route, historyState);
+				break;
+			case "replace":
+				this._slashr.router.history.replace(route, historyState);
+				break;
+		}
+	}
+	push(route, options){
+		this._updateRoute("push",route,options);
+	}
+	replace(route, options){
+		this._updateRoute("replace",route,options);
 	}
 }
 class SlashrApp{
@@ -2554,7 +2580,9 @@ export class SlashrUiGrid {
 			let historyAction = props.history.action;
 			switch (historyAction) {
 				case "POP":
+				throw("SLDKJF");
 					if (props.location.state && props.location.state._slashrUiGrid) {
+						throw("SLKDJF");
 						console.log("slashr ui grid",props.location.state._slashrUiGrid);
 						let historyState = props.location.state._slashrUiGrid;
 						// console.log("grid test history loca",props.location);
@@ -2611,8 +2639,9 @@ export class SlashrUiGrid {
 		}
 
 		// let section = this.props.grid.sections[this.props.section];
-		let state = this._route.location.state || {};
-		let gridState = (state._slashrUiGrid) ? (state._slashrUiGrid || {grid:{}}) : {grids:{}};
+		let routeState = this._route.location.state || {};		
+		let gridState = routeState.grid || {grids:{}};
+
 		let scrollY = window.scrollY;
 		// // Check if already in history
 		if (! gridState.grids[this.name] || gridState.grids[this.name].page !== lastVisiblePage){
@@ -2640,16 +2669,23 @@ export class SlashrUiGrid {
 		gridState.scrollY = scrollY;
 		
 		// console.log("grid handle intersect state", this.props.section, section.ref.current, gridState[this.name]);
-		state._slashrUiGrid = gridState;
+		//state._slashrUiGrid = gridState;
+		routeState.grid = gridState;
 
-		console.log("GRID NEW STATE ",state);
+		
 
 
 		let location = this._slashr.router.location;
-		location.state = state;
+
 		console.log("GRID NEW STATE LOC",location);
+
+		// if(! location.state) location.state = {};
+		// if(! location.state.views) location.state.views = {};
+		// location.state.views[this._route.name] = state;
+				//location.state = state;
+	
 		// throw("LKJSDFH");
-		// if(! this.isDisabled) this.router.history.replace(location);
+		//if(! this.isDisabled) this.router.history.replace(location);
 
 	}
 
