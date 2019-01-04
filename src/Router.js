@@ -20,7 +20,8 @@ export const _Router = inject("slashr")(observer(
 		this.app = this.props.slashr.app;
 		console.log("VIEW ROUTE CONTROLLER",this.props);
         //this.props.location.state.router
-        this.location = this.props.location;
+		this.location = this.props.location;
+
 		console.log("view props",this.app,this.props);
 		//this.updateRoutes();
 		this.props.slashr.router.initialize(props);
@@ -74,12 +75,13 @@ export const _Router = inject("slashr")(observer(
 		
 	}
     updateRoutes(){
-		
         let component = null;
-        let route = null; 
+		let route = null; 
+		alert(this.props.location.pathname);
 		console.log("ROUTER updateRoutes",this.props.slashr);
 		let isFound = false;
 		// let locationState = this.props.location.state || {};
+		// Update the router
 		let routerState = (this.props.location.state && this.props.location.state._slashr) ? this.props.location.state._slashr.router : {};
 
 		let currViewName = (routerState && routerState.view) || "default";
@@ -97,15 +99,11 @@ export const _Router = inject("slashr")(observer(
 				
 				for(let viewName in this.props.slashr.router.views){
 
-					console.log("router test",viewName, currViewName);
-
 					let match = false;
 					if(viewName === currViewName){
 						match = matchPath(this.props.location.pathname, route.path);
 					}
 					else{
-						console.log("router test",routerState);
-						//alert("LSDKJFLKJFH");
 						if(routerState.views && routerState.views[viewName]){
 							match = matchPath(routerState.views[viewName].pathname, route.path);
 							console.log("ROUTER test MATCH",route.path,routerState.views[viewName].pathname,match);
@@ -130,9 +128,16 @@ export const _Router = inject("slashr")(observer(
     componentDidMount(){
 		console.log("router intiial location",this.props.location);
 		this.updateRoutes();
-    }
+	}
+	componentWillReact(){
+	}
     componentDidUpdate(prevProps){
+		alert("CHECK CHECK CHECK");
 		if(this.props.location.pathname !== prevProps.location.pathname || this.props.location.search !== prevProps.location.search){
+			console.log("router check change",this.props,prevProps, this.props.location.pathname, prevProps.location.pathname, this.props.location.search, prevProps.location.search);
+			console.log("ROUTER REACT LOCATION",this.props.slashr.router.location, this.props.location);
+
+			this.props.slashr.router.initialize(this.props);
 			this.updateRoutes();
 		}
     }
@@ -279,9 +284,17 @@ export const RouteLink = inject("slashr")(observer(
 		constructor(props){
 			super(props);
 			this.handleClick = this.handleClick.bind(this);
-			this.isMatch = false;
 			this.routeProps = null;
 			this.initialize();
+			this.state = {
+				isMatch: this.isMatch
+			};
+		}
+		componentWillReact(){
+			console.log("Link update react!!!!!");
+		}
+		componentDidUpdate(){
+			//this.initialize();
 		}
 		handleClick(e){
 			e.preventDefault();
@@ -306,10 +319,12 @@ export const RouteLink = inject("slashr")(observer(
 
 			console.log("ROUTER LINK",routeProps,this.props.slashr.router.location);
 			this.routeProps = routeProps;
-
+		}
+		get isMatch(){
 			// Check if it is a match
-			let match = matchPath(this.props.slashr.router.location.pathname, routeProps.route);
-			this.isMatch = (match && match.isExact) ? true : false;
+			let match = matchPath(this.props.slashr.router.location.pathname, this.routeProps.route);
+			console.log("LINK UPDATE MATCH",this.props.slashr.router, this.props.slashr.router.location.pathname,this.routeProps.route);
+			return (match && match.isExact) ? true : false;
 		}
 		get className(){
 			let classNames = [];
@@ -318,6 +333,7 @@ export const RouteLink = inject("slashr")(observer(
 			return classNames.length ? classNames.join(" ") : null;
 		}
 		render(){
+			let uid = this.props.slashr.router.uid;
 			return (
 				<a href={this.routeProps.route} className={this.className} onClick={this.handleClick}>{this.props.children}</a>
 			);
