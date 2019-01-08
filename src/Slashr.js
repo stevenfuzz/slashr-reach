@@ -83,13 +83,16 @@ class SlashrRouter{
 		this._views = {};
 		this._history = null;
 		this._location = null;
+		this._prevLocation = null;
 		this._isInitialized = false;
 		this._activeViewName = "default";
 		this._activeRouteName = null;
+
 	}
 	initialize(options){
 		if(! options.location) throw("Router error: No location."); 
 		if(! options.history) throw("Router error: No history."); 
+		//if(this._location) this._prevLocation = this._location;
 		this._location = options.location;
 		this._history = options.history;
 		if(options.location.state && options.location.state.view) this._activeViewName = options.location.state.view;
@@ -101,11 +104,16 @@ class SlashrRouter{
 		return this._views[name];
 	}
 	hasRoute(name){
-		return this._views[name]._location ? true : false;
+		if(! this._views[name]) return false;
+		return this._views[name].hasRoute;
 	}
 	update(name, component, props){
 		if(! this._views[name]) return false;
-		this._views[name].update(component, props);
+		return this._views[name].update(component, props);
+	}
+	reset(name){
+		if(! this._views[name]) return false;
+		this._views[name].reset();
 	}
 	viewExists(name){
 		return this._views[name] ? true : false;
@@ -133,12 +141,18 @@ class SlashrRouter{
 		if(! this._views[name]) return false;
 		this._views[name].updateUiState(state);
 		
-		let route = this._location.pathname += (this._location.search || "");
+		//let route = this._location.pathname += (this._location.search || "");
 		//if(this._location.search) route += this._location.search;
+		
+		this._slashr.router.history.replace({
+			pathname: this._location.pathname,
+			state: this.createState({
+				state: this._location.state
+			}),
+			search: this._location.search || ""
+		});
 
-		this._slashr.router.history.replace(route, this.createState({
-			state: this._location.state
-		}));
+		console.log("router react check state",JSON.stringify(this._location.pathname));
 		// this._slashr.app.router.replace(route, this.createState({
 		// 	state: this._location.state
 		// }));
@@ -186,17 +200,21 @@ class SlashrRouterView{
 	_uid = null;
 	_component = null;
 	_location = null;
+	_ui = {};
+	_hasLoaded = false;
 	constructor(router, name, props){
 		this._name = name;
 		this._router = router;
 		this._onLoading = props.onLoading || null;
 		this._onLoaded = props.onLoaded || null;
 		this._location = this.parseLocation();
+		this._isModal = props.modal ? true : false;
 	}
 	parseLocation(){
 		let ret = null;
 		let location = this._router.location;
 		let useDefault = this._name === "default";
+		alert("check why there is no location set with state when route link looks...");
 		if(location.state && location.state.views && location.state.views){
 			if(location.state.router !== this._name){
 				useDefault = false;
@@ -212,7 +230,7 @@ class SlashrRouterView{
 			ret = {
 				pathname: location.pathname,
 				// state: location.state,
-				// search: location.search
+				search: location.search
 			};
 			if(location.state){
 				//alert("filter state");
@@ -224,22 +242,33 @@ class SlashrRouterView{
 
 		return ret;
 	}
+	reset(){
+		this._component = null;
+		this._location = null;
+		this._ui = {};
+		this._hasLoaded = false;
+		this._uid = null;
+	}
 	update(component, props){
 		this._component = component;
 		this._location = null;
-		this._routerName = (props.location.state && props.location.state.router) || "default";
+		//this._routerName = (props.location.state && props.location.state.router) || "default";
 		this._ui = {};
+		this._hasLoaded = true;
 
 		if(props.location){
 			let location = null;
 			let routerState = (props.location.state && props.location.state._slashr) ? props.location.state._slashr.router : {};
 			
-			console.log("CURRENT ROUTER STATE",routerState);
-			
 			if(routerState.views){
 				for(let name in routerState.views){
 					if(name === this._name){
-						this._location = routerState.views[name];
+						this._location = {
+							pathname: routerState.views[name].pathname
+						};
+						if(routerState.views[name].ui){
+							this._ui = routerState.views[name].ui;
+						}
 						console.log("HISTORY UPDATE ROUTER FIGURE OUT LOCATION",this._location);
 					}
 				}
@@ -249,7 +278,7 @@ class SlashrRouterView{
 				this._location = {
 					pathname: props.location.pathname,
 					// state: props.location.state,
-					// search: props.location.search
+					search: props.location.search
 				};
 				if(props.location.state){
 					//alert("filter state");
@@ -289,6 +318,10 @@ class SlashrRouterView{
 		if(! this._uid) return null;
 		return this._component;
 	}
+	get hasRoute(){
+		if(! this._uid) return false;
+		return (this._location) ? true : false;
+	}
 	get location(){
 		return this._location;
 	}
@@ -301,8 +334,17 @@ class SlashrRouterView{
 	get uid(){
 		return this._uid;
 	}
+	get ui(){
+		return this._ui;
+	}
+	get hasLoaded(){
+		return this._hasLoaded;
+	}
 	get pathname(){
 		return this._location ? this._location.pathname : null;
+	}
+	get search(){
+		return this._location ? this._location.search : "";
 	}
 	get isInitialized(){
 		return this._uid ? true : false;
@@ -323,7 +365,7 @@ class SlashrAppRouter{
 	}
 	_updateRoute(type, route, options = {}){
 		let view = "default";
-		//console.log("push route 123",router,route,options,typeof router);
+		console.log("push route 123",type,route,options);
 
 		console.log("ROUTER HISTORY 234234",type,route,options);
 
@@ -345,14 +387,23 @@ class SlashrAppRouter{
 
 		let state = this._slashr.router.createState(options);
 
-
-		console.log("ROUTER HISTORY STATA",state,route,this._slashr.router.location.pathname);
+		// Check if the next view is modal
+		// If not, remove any modal views
+		// console.log("ROUTER HISTORY STATA",view, JSON.stringify(state._slashr.router.views),state,route,this._slashr.router.location.pathname);
+		// for(let currView in state._slashr.router.views){
+		// 	console.log("curr view test...", currView);
+		// }
 
 		// If changing routes for the new route, remove from state
 		if(this._slashr.router.location.pathname !== route && state._slashr.router.views[view]){
 			delete state._slashr.router.views[view];
 		}
 		else console.log("TODO: IS THIS ROUTE OK?");
+
+		
+
+		// Check if new route should close modal layers
+
 		
 		// if(Object.keys(views).length) routerState.views = views;
 
@@ -440,8 +491,10 @@ class SlashrAppModel{
 }
 
 class SlashrController{
-	constructor(domain){
+	constructor(routerView, domain){
+		console.log("router controller constructor",routerView);
 		this.result = this.rslt = new SlashrControllerActionResultFactory();
+		this._routerView = routerView;
 		// this._slashr = Slashr.getInstance();
 	}
 	get model(){
@@ -450,6 +503,14 @@ class SlashrController{
 	}
 	get mdl(){
 		return this.model;
+	}
+	get route(){
+		return {
+			view: this._routerView.name
+		};
+	}
+	get rt(){
+		return this.route;
 	}
 }
 class SlashrControllerActionResultFactory{
@@ -2175,8 +2236,12 @@ export const _Dialog = inject("slashr")(observer(
 		}
 		componentDidUpdate(prevProps, prevState, snapshot) {
 			if (this.props.open !== prevProps.open) this.dlg.open = this.props.open;
-
-			if (this.dlg.open) this.hasOpened = true;
+			if (this.dlg.open){
+				if(! this.hasOpened){
+					this.hasOpened = true;
+					this.onOpen();
+				}
+			}
 			else if (this.hasOpened) {
 				this.hasOpened = false;
 				this.onClose();
@@ -2191,7 +2256,11 @@ export const _Dialog = inject("slashr")(observer(
 			this.dlg.delete();
 		}
 		onClose() {
+			console.log("route dialog on close",this.props.onClose);
 			if (this.props.onClose) this.props.onClose(this.dlg);
+		}
+		onOpen() {
+			if (this.props.onOpen) this.props.onOpen(this.dlg);
 		}
 		render() {
 			let closeButton = null;
@@ -2627,30 +2696,43 @@ export class SlashrUiGrid {
 		this._metadata.initialPage = props.page || 1;
 		this._metadata.history = null;
 		this._metadata.initialScrollY = 0;
-		//alert("LSKDJF");
-		if (props.history && props.location && props.location.state && props.location.state._slashr){
-			let historyAction = props.history.action;
-			switch (historyAction) {
+		if(this._router.history && this._route && this._route.ui && this._route.ui.grid && this._route.ui.grid.grids[this.name]){
+			
+			switch(this._router.history.action){
 				case "POP":
-				throw("SLDKJF");
-					if (props.location.state && props.location.state._slashrUiGrid) {
-						throw("SLKDJF");
-						console.log("slashr ui grid",props.location.state._slashrUiGrid);
-						let historyState = props.location.state._slashrUiGrid;
-						// console.log("grid test history loca",props.location);
-						if (historyState.grids[this.name]) {
-							this._metadata.history = historyState.grids[this.name];
-							this._metadata.initialPage = historyState.grids[this.name].page;
-							this._metadata.initialScrollY = (historyState.scrollY || 0);
-						}
-					}
-					break;
-				case "PUSH":
-					console.log("");
-					//throw ("REMOVE FROM HISTORY");
-					break;
+					let historyState = this._route.ui.grid;
+					this._metadata.history = historyState.grids[this.name];
+					this._metadata.initialPage = historyState.grids[this.name].page;
+					this._metadata.initialScrollY = (historyState.scrollY || 0);
+				break;
 			}
 		}
+		//alert("LSKDJF");
+		
+		// if (props.history && props.location && props.location.state && props.location.state._slashr){
+		// 	let historyAction = props.history.action;
+		// 	switch (historyAction) {
+		// 		case "POP":
+		// 		alert("pop");
+		// 		throw("SLDKJF");
+		// 			if (props.location.state && props.location.state._slashrUiGrid) {
+		// 				throw("SLKDJF");
+		// 				console.log("slashr ui grid",props.location.state._slashrUiGrid);
+		// 				let historyState = props.location.state._slashrUiGrid;
+		// 				// console.log("grid test history loca",props.location);
+		// 				if (historyState.grids[this.name]) {
+		// 					this._metadata.history = historyState.grids[this.name];
+		// 					this._metadata.initialPage = historyState.grids[this.name].page;
+		// 					this._metadata.initialScrollY = (historyState.scrollY || 0);
+		// 				}
+		// 			}
+		// 			break;
+		// 		case "PUSH":
+		// 			console.log("");
+		// 			//throw ("REMOVE FROM HISTORY");
+		// 			break;
+		// 	}
+		// }
 		this._metadata.initialSection = this.getSectionByPage(this.initialPage);
 	}
 	get updateSize() {
@@ -2812,6 +2894,7 @@ export class SlashrUiGrid {
 		}
 
 		// Something has loaded
+		console.log("GRID SET INIT",this.name);
 		this._stateProps.isInitialized = true;
 	}
 	async loadPages(pages) {
@@ -3376,7 +3459,6 @@ export const _GridSectionLoader = inject("slashr")(observer(
 					}
 					if (loaderHeight) loaderCntrStyle.height = `${loaderHeight}px`;
 				}
-				console.log("loader style",loaderCntrStyle);
 				return (
 					<Container
 						style={loaderCntrStyle}
