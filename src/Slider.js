@@ -120,7 +120,7 @@ export class SliderDomain {
 			this._stateProps.doShow = true;
 			return;
 		}
-
+		alert("LSKDJFLKJLFKH");
 		if(this.isRendered){
 			this._isUpdating = true;
 			let size = this.getDimensions();
@@ -153,6 +153,7 @@ export class SliderDomain {
 					this.updateScrollToItem = false;
 				}
 		
+				console.log("Slider update nvals",nvals);
 
 				mobxSet(this._stateProps,nVals);
 				// this._stateProps = { ...this._stateProps, ...nVals };

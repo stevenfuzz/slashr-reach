@@ -56,7 +56,6 @@ class slashrApi{
 
 	}
 	get baseUrl(){
-		console.log("Config config copnfig",Slashr.config);
 		return Slashr.config.api.url;
 	}
 	_getAccessToken(){

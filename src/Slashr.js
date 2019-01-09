@@ -163,7 +163,8 @@ class SlashrRouter{
 		let routerState = {
 			views: {}
 		};
-		if(options.view && options.view !== "default") routerState.view = options.view;
+		
+		routerState.view = options.view || "default";
 		//let actvieView = options.view || this.activeViewName;
 		//let activeRoute = options.route || this.activeRouteName;
 		for(let view in this._views){
@@ -174,7 +175,25 @@ class SlashrRouter{
 		state._slashr = {
 			router: routerState
 		}
+		console.log("router createState with options",options,state);
 		return state;
+	}
+	parseLinkProps(props) {
+		let routeProps = {
+			route: props.route || null,
+			view: props.view || "default"
+		};
+		if (!props.to) throw ("Route Link Error: No to.");
+		if (typeof props.to === 'object') {
+			if (props.to.pathname) routeProps.route = props.to.pathname;
+			else if (props.to.route) routeProps.route = props.to.route;
+			if (props.to.view) {
+				routeProps.view = props.to.view;
+			}
+		}
+		else routeProps.route = props.to;
+		if (!routeProps.route) throw ("Route Link Error: No pathname.");
+		return routeProps;
 	}
 	get default(){
 		return this.instance("default");
@@ -214,15 +233,22 @@ class SlashrRouterView{
 		let ret = null;
 		let location = this._router.location;
 		let useDefault = this._name === "default";
-		alert("check why there is no location set with state when route link looks...");
-		if(location.state && location.state.views && location.state.views){
-			if(location.state.router !== this._name){
+
+		let routerState = this._router.slashrState.router;
+
+		if(routerState && routerState.views && routerState.views[this._name]){
+			if(routerState.view !== this._name){
 				useDefault = false;
-				for(let name in location.state.views){
-					if(name === this._name){
-						ret = location.state.views[name];
-					}
-				}
+				let locState = routerState.views[this._name];
+				ret = {
+					pathname: locState.pathname,
+					search: locState.search
+				};
+				// for(let name in location.state.views){
+				// 	if(name === this._name){
+						
+				// 	}
+				// }
 			}
 			else useDefault = true;
 		}
@@ -287,10 +313,8 @@ class SlashrRouterView{
 				if(props.location.search) this._location.search = props.location.search;
 			}
 		}
-		console.log("ROUTER UPDATE LOCATION",this._name, this._location);
 		let uid = (this._location) ? this._location.pathname + this._location.search : null;
 		if(uid !=- this._uid){
-			console.log("ROUTER UPDATE UID",this._name, uid);
 			this._uid = uid;
 		}
 	}
@@ -435,6 +459,7 @@ class SlashrApp{
 	constructor(slashr, options){
 		if(! options.config) throw("Slashr Error: No Config.");
 		if(! options.routes) throw("Slashr Error: No Routes.");
+		console.log("TODO: Put routes in router?");
 		this._metadata = {
 			model: new SlashrAppModel(options),
 			router: new SlashrAppRouter(slashr, options),
@@ -442,7 +467,6 @@ class SlashrApp{
 			routes: options.routes,
 			defaultLayout: options.defaultLayout || null
 		}
-		console.log("Created app:",this._metadata);
 
 	}
 	get router(){
@@ -458,11 +482,9 @@ class SlashrApp{
 		return this.model;
 	}
 	get routes(){
-		console.log("TODO: MOVE THIS OUT OF APP");
 		return this._metadata.routes;
 	}
 	get defaultLayout(){
-		console.log("TODO: MOVE THIS OUT OF APP");
 		return this._metadata.defaultLayout;
 	}
 	get config(){
@@ -492,13 +514,11 @@ class SlashrAppModel{
 
 class SlashrController{
 	constructor(routerView, domain){
-		console.log("router controller constructor",routerView);
 		this.result = this.rslt = new SlashrControllerActionResultFactory();
 		this._routerView = routerView;
 		// this._slashr = Slashr.getInstance();
 	}
 	get model(){
-		console.log("GET THE MODEL",Slashr.getInstance().app.mdl);
 		return Slashr.getInstance().app.mdl;
 	}
 	get mdl(){
@@ -1987,26 +2007,29 @@ export const Header = React.forwardRef((props, ref) => (
 	</Element>
 ));
 
-export const ContainerLink = withRouter(
-	class ContainerLink extends React.Component {
-		constructor(props){
-			super(props);
-			this.handleClick = this.handleClick.bind(this);
-			if(! this.props.to) throw("ContainerLink error: 'to' prop missing");
-		}
-		handleClick(e){
-			if(e.target.tagName !== "A") this.props.history.push(this.props.to);
-		}
-		render(){
-			return(
-				<div className={this.props.className} onClick={this.handleClick}>
-					{this.props.children}
-				</div>
-			);
-			
+
+export class ContainerLink extends React.Component {
+	constructor(props){
+		super(props);
+		this.slashr = Slashr.getInstance();
+		this.handleClick = this.handleClick.bind(this);
+		this.routeProps = this.slashr.router.parseLinkProps(this.props);
+		if(! this.props.to) throw("ContainerLink error: 'to' prop missing");
+	}
+	handleClick(e){
+		if(e.target.tagName !== "A"){
+			this.slashr.app.router.push(this.routeProps);
 		}
 	}
-);
+	render(){
+		return(
+			<div className={this.props.className} onClick={this.handleClick}>
+				{this.props.children}
+			</div>
+		);
+		
+	}
+};
 
 export class SocialText extends React.Component {
 	constructor(props){
@@ -2894,7 +2917,6 @@ export class SlashrUiGrid {
 		}
 
 		// Something has loaded
-		console.log("GRID SET INIT",this.name);
 		this._stateProps.isInitialized = true;
 	}
 	async loadPages(pages) {
