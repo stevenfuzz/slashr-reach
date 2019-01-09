@@ -115,15 +115,14 @@ export class SliderDomain {
 			this._stateProps.doShow = false;
 			return;
 		}
-
 		if(! this._stateProps.doShow){
 			this._stateProps.doShow = true;
 			return;
 		}
-		alert("LSKDJFLKJLFKH");
 		if(this.isRendered){
 			this._isUpdating = true;
 			let size = this.getDimensions();
+			
 			if (size) {
 				let hasScroll = (size.scrollWidth > size.width);
 				let isScrollStart = (size.scrollLeft == 0);
@@ -153,8 +152,6 @@ export class SliderDomain {
 					this.updateScrollToItem = false;
 				}
 		
-				console.log("Slider update nvals",nvals);
-
 				mobxSet(this._stateProps,nVals);
 				// this._stateProps = { ...this._stateProps, ...nVals };
 				// this._stateProps.doShowControlLeft = (hasScroll && !isScrollStart);
@@ -372,6 +369,7 @@ export const _Slider = inject("slider")(observer(
 		componentDidUpdate(){
 			// console.log("slider componentDidUpdate", this.props.slider.isLoaded);
 			//this.props.slider.handleUpdate(this.props);
+			//console.log("Slider update",this.props.slider.ref.slider);
 		}
 		componentWillReact() {
 			this.props.slider.handleUpdate(this.props);
@@ -379,6 +377,7 @@ export const _Slider = inject("slider")(observer(
 		render() {
 			let loader = (this.props.loader) ? this.props.loader : <Container>Loading...</Container>;
 			if(! this.props.slider.doShow) return null;
+			this.props.slider.rendered = true;
 			return (
 				<Container
 					className="slider"
@@ -400,43 +399,43 @@ export const _Slider = inject("slider")(observer(
 					</Swipeable> */}
 					
 					<Container
-						// hide
-						// unmountOnHide
-						// onTransition={this.props.slider._handleTransition}
-						// transitionToggle={this.props.slider.doShow}
-						// transition={{
-						// 	easing: "easeInQuad",
-						// 	enter: {
-						// 		origin: "top left",
-						// 		display:"block",
-						// 		opacity:0,
-						// 		transform:{
-						// 			translate: "10%",
-						// 		}
-						// 	},
-						// 	entering: {
-						// 		opacity:1,
-						// 		transform:{
-						// 			translate: "0%",
-						// 		}
-						// 	},
-						// 	entered: {},
-						// 	exit: {
-						// 		opacity:1,
-						// 		transform:{
-						// 			translate: "0%",
-						// 		}
-						// 	},
-						// 	exiting: {
-						// 		opacity:0,
-						// 		transform:{
-						// 			translate: "-10%",
-						// 		}
-						// 	},
-						// 	exited: {
-						// 		display:"none",
-						// 	}
-						// }}
+						hide
+						unmountOnHide
+						onTransition={this.props.slider._handleTransition}
+						transitionToggle={this.props.slider.doShow}
+						transition={{
+							easing: "easeInQuad",
+							enter: {
+								origin: "top left",
+								display:"block",
+								// opacity:0,
+								// transform:{
+								// 	translate: "10%",
+								// }
+							},
+							entering: {
+								// opacity:1,
+								// transform:{
+								// 	translate: "0%",
+								// }
+							},
+							entered: {},
+							exit: {
+								// opacity:1,
+								// transform:{
+								// 	translate: "0%",
+								// }
+							},
+							exiting: {
+								// opacity:0,
+								// transform:{
+								// 	translate: "-10%",
+								// }
+							},
+							exited: {
+								display:"none",
+							}
+						}}
 						className="slider-items-wrapper"
 						ref={this.props.slider.ref.sliderItemsWrapper}
 						style={{

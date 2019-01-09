@@ -7,3 +7,4 @@ export * from './MenuSlider';
 export * from './Slider';
 export * from './api';
 export * from './App'
+export {observable,action} from "mobx";

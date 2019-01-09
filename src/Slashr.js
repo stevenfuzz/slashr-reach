@@ -59,6 +59,12 @@ export class Slashr {
 	static get Controller(){
 		return SlashrController;
 	}
+	static get Domain(){
+		return SlashrDomain;
+	}
+	static listen(domain, props = {}){
+		decorate(domain, props);
+	}
 	// setConfig(config) {
 	// 	this._metadata.config = config;
 	// }
@@ -533,6 +539,21 @@ class SlashrController{
 		return this.route;
 	}
 }
+class SlashrDomain{
+	constructor(){
+		
+	}
+	get model(){
+		return Slashr.getInstance().app.mdl;
+	}
+	get mdl(){
+		return this.model;
+	}
+	setState(values){
+		mobxSet(this, values);
+	}
+}
+
 class SlashrControllerActionResultFactory{
 	component(component){
 		return new SlashrControllerActionComponentResult(component);
