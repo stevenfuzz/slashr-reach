@@ -639,7 +639,6 @@ class SlashrUi {
 	}
 	transition(elmt, toggled, options = {}) {
 		options.toggled = toggled;
-		options.why = "test";
 		this.animationQueue.add(elmt, Slashr.TRANSITION, options);
 	}
 	createElement(props) {
@@ -1021,6 +1020,7 @@ class SlashrUiElement {
 				//if(this.props.transition && this.elmt.className == "menu") console.log("menu props NOT EQ",this.elmt.className,i,this.props[i],prevProps[i]);
 				switch (prop) {
 					case "transitionToggle":
+						console.log("transition updated props",props, updatedProps, this._stateProps[prop]);
 						if (!updatedProps.transition && props.transition) {
 							updatedProps.transition = props.transition;
 						}
@@ -1028,6 +1028,9 @@ class SlashrUiElement {
 				}
 			}
 		}
+
+		if(updatedProps.transition) console.log("updated props",JSON.stringify(updatedProps.transition));
+		
 		return (hasUpdate) ? updatedProps : false;
 	}
 	init(props) {
@@ -1129,6 +1132,7 @@ class SlashrUiElement {
 					case "transitionToggle":
 						if (this.isHidden && props[name] === false) shouldRender = false;
 						hasUpdate = true;
+						console.log("Should Render?",shouldRender, props, this.isHidden,hasUpdate);
 						break;
 					// Always render animate
 					case "animate":
@@ -1137,6 +1141,7 @@ class SlashrUiElement {
 				}
 			}
 			if (shouldRender && !hasUpdate && this.isHidden) shouldRender = false;
+			console.log("Should Render 2?",shouldRender, hasUpdate, this.isHidden);
 		}
 		if (this._metadata.state.shouldRender && !shouldRender) {
 			// Should render has changed, remove listeners
@@ -1192,7 +1197,6 @@ class SlashrUiElement {
 			else if (!this.isHidden) this._metadata.ui.fadeOut(this);
 		}
 		if ("transition" in props && "transitionToggle" in props) {
-
 			// let transitionToggle = (props.transitionToggle) ? true : false;
 			this._metadata.ui.transition(this, props.transitionToggle, props.transition);
 
@@ -2181,6 +2185,7 @@ export const _Menu = inject("slashr")(observer(
 			if (this.props.onClose) this.props.onClose(this.mnu);
 		}
 		render() {
+			
 			let classNames = ["menu-cntr"];
 			if (this.props.className) classNames.push(this.props.className);
 			let control = React.cloneElement(this.props.control, {
@@ -2194,6 +2199,7 @@ export const _Menu = inject("slashr")(observer(
 			else{
 				menuProps.fadeToggle = this.mnu.isOpen;
 			}
+			//console.log("menu render",menuProps);
 			return (
 				<div className={classNames.join(" ")}>
 					<div className="menu-control">

@@ -98,8 +98,8 @@ export const _Router = inject("slashr")(observer(
 							match = matchPath(routerState.views[viewName].pathname, route.path);
 							if (match && match.isExact) {
 								// Always refresh the currentview route
-								if (viewName !== currViewName 
-									&& routerView.hasLoaded && routerState.views[viewName].pathname === routerView.location.pathname
+								//viewName !== currViewName && 
+								if (routerView.hasLoaded && routerState.views[viewName].pathname === routerView.location.pathname
 									&& routerState.views[viewName].search === routerView.location.search) {
 									currViews[viewName] = true;
 									match = false;
