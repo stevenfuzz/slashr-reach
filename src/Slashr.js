@@ -320,7 +320,7 @@ class SlashrRouterView{
 			}
 		}
 		let uid = (this._location) ? this._location.pathname + this._location.search : null;
-		if(uid !=- this._uid){
+		if(uid !== this._uid){
 			this._uid = uid;
 		}
 	}
@@ -425,7 +425,10 @@ class SlashrAppRouter{
 		// }
 
 		// If changing routes for the new route, remove from state
-		if(this._slashr.router.location.pathname !== route && state._slashr.router.views[view]){
+
+		let currRoute = this._slashr.router.location.pathname + (this._slashr.router.location.search || "");
+
+		if(currRoute !== route && state._slashr.router.views[view]){
 			delete state._slashr.router.views[view];
 		}
 		else console.log("TODO: IS THIS ROUTE OK?");
@@ -1132,7 +1135,6 @@ class SlashrUiElement {
 					case "transitionToggle":
 						if (this.isHidden && props[name] === false) shouldRender = false;
 						hasUpdate = true;
-						console.log("Should Render?",shouldRender, props, this.isHidden,hasUpdate);
 						break;
 					// Always render animate
 					case "animate":
@@ -1141,7 +1143,6 @@ class SlashrUiElement {
 				}
 			}
 			if (shouldRender && !hasUpdate && this.isHidden) shouldRender = false;
-			console.log("Should Render 2?",shouldRender, hasUpdate, this.isHidden);
 		}
 		if (this._metadata.state.shouldRender && !shouldRender) {
 			// Should render has changed, remove listeners

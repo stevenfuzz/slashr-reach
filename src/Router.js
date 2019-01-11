@@ -76,7 +76,7 @@ export const _Router = inject("slashr")(observer(
 			// Update the router
 			let routerState = (this.props.location.state && this.props.location.state._slashr) ? this.props.location.state._slashr.router : {};
 
-			console.log(routerState);
+			console.log("update routes",routerState);
 
 			let currViewName = (routerState && routerState.view) || "default";
 			let hasMatch = false;
@@ -84,57 +84,57 @@ export const _Router = inject("slashr")(observer(
 			//TODO: Rewrite this is a total mess. Refactor and simplify
 			let t = 0;
 			for (let route of this.app.routes) {
-				if (route.controller) {
+				if(! route.controller) throw("No Controller Found for route");
 					
-					for (let viewName in this.props.slashr.router.views) {
-						console.log("CHECK ROUTER",viewName,route,++t);
-						if(currViews[viewName]) continue;
-						//console.log("ROUTER STATE",routerState.views);
-						let match = false;
-						let routerView = this.props.slashr.router.views[viewName];
+				for (let viewName in this.props.slashr.router.views) {
+					// console.log("CHECK ROUTER",viewName,route,++t);
+					if(currViews[viewName]) continue;
+					//console.log("ROUTER STATE",routerState.views);
+					let match = false;
+					let routerView = this.props.slashr.router.views[viewName];
 
-						if (routerState.views && routerState.views[viewName] && this.props.slashr.router.views[viewName]) {
-							// Check if not loaded, or changed
-							match = matchPath(routerState.views[viewName].pathname, route.path);
-							if (match && match.isExact) {
-								// Always refresh the currentview route
-								//viewName !== currViewName && 
-								if (routerView.hasLoaded && routerState.views[viewName].pathname === routerView.location.pathname
-									&& routerState.views[viewName].search === routerView.location.search) {
-									currViews[viewName] = true;
-									match = false;
-									break;
-								}
-							}
-						}
-						else if (viewName === currViewName) {
-							// throw("Should this exist?");
-							match = matchPath(this.props.location.pathname, route.path);
-							if (match && match.isExact) {
-								if (routerView.hasLoaded
-									&& this.props.location.pathname === routerView.location.pathname
-									&& this.props.location.search === routerView.location.search) {
-									currViews[viewName] = true;
-									match = false;
-									break;
-								}
-							}
-						}
-					
+					if (routerState.views && routerState.views[viewName] && this.props.slashr.router.views[viewName]) {
+						// Check if not loaded, or changed
+						match = matchPath(routerState.views[viewName].pathname, route.path);
 						if (match && match.isExact) {
-							console.log("check route views",viewName,match);
-							currViews[viewName] = true;
-							hasMatch = true;
-							this.initializeActionResult(viewName, route.controller, route.action, match.params);
-							break;
+							// Always refresh the currentview route
+							//viewName !== currViewName && 
+							if (routerView.hasLoaded && routerState.views[viewName].pathname === routerView.location.pathname
+								&& routerState.views[viewName].search === routerView.location.search) {
+								currViews[viewName] = true;
+								match = false;
+								break;
+							}
 						}
-						//throw("SKLDJF");
-
 					}
+					else if (viewName === currViewName) {
+						// throw("Should this exist?");
+						match = matchPath(this.props.location.pathname, route.path);
+						if (match && match.isExact) {
+							if (routerView.hasLoaded
+								&& this.props.location.pathname === routerView.location.pathname
+								&& this.props.location.search === routerView.location.search) {
+								currViews[viewName] = true;
+								match = false;
+								break;
+							}
+						}
+					}
+				
+					if (match && match.isExact) {
+						console.log("check route views",viewName,match);
+						currViews[viewName] = true;
+						hasMatch = true;
+						this.initializeActionResult(viewName, route.controller, route.action, match.params);
+						break;
+					}
+					//throw("SKLDJF");
 
 				}
-				//if(hasMatch) break;
+
 			}
+				//if(hasMatch) break;
+			
 			// Check current views
 			// If not a current view, but the view has a route, reset it
 
@@ -182,14 +182,14 @@ export const RouterView = inject("slashr")(observer(
 			let routeComponent = this.props.slashr.router.view(this.name).component;
 			if (routeComponent) {
 				component = (
-					<React.Fragment
-						key={this.props.slashr.router.view(this.name).pathname}
-					>
+					// <React.Fragment
+					// 	// key={this.props.slashr.router.view(this.name).pathname}
+					// >
 						<Provider route={this.props.slashr.router.view(this.name)}>
 							{routeComponent}
 						</Provider>
 
-					</React.Fragment>
+					// </React.Fragment>
 				);
 			}
 

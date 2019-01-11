@@ -36,6 +36,7 @@ export class MenuSliderDomain{
 		if(this._onSelect) this._onSelect(this._activeItem);
 	}
 	setActiveItem(item){
+		console.log("Set active item",item);
 		let activeItem = (typeof item === 'string') ? item : item.name;
 		if(activeItem === this._activeItem) return false;
 		this._activeItem = activeItem;
@@ -132,12 +133,12 @@ export const _MenuSlider = inject("menuSlider")(observer(
 			//this.props.menuSlider.initialize();
 		}
 		componentWillReact(){
-
+			console.log("PROFILE UID REACT REACT!!!!!!!!!!!!!!!!!",this.props.activeItem, this.props.menuSlider.activeItem);
 			if(this.props.scrollToItem !== this.props.menuSlider.scrollToItem){
 				this.props.menuSlider.scrollToItem = this.props.scrollToItem;
 			}
 			if(this.props.activeItem !== this.props.menuSlider.activeItem){
-				this.props.menuSlider.activeItem = this.props.scrollToItem;
+				this.props.menuSlider.activeItem = this.props.activeItem;
 			}
 
 			// if(this.props.activeItem === this.props.menuSlider.activeItem){
@@ -197,6 +198,7 @@ export const MenuSliderItem = inject("menuSlider")(observer(
 			this.props.menuSlider.selectItem(this.item);
 		}
 		render() {
+			console.log("profile UID SLIDER ITEMS????",this.props.menuSlider.activeItem);
 			return(
 				<Container
 					className={this.item.className}
