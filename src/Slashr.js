@@ -463,6 +463,12 @@ class SlashrAppRouter{
 	replace(route, options){
 		this._updateRoute("replace",route,options);
 	}
+	location(){
+		return this._slashr.router.location;
+	}
+	history(){
+		return this._slashr.router.history;
+	}
 }
 class SlashrApp{
 	constructor(slashr, options){
@@ -474,7 +480,8 @@ class SlashrApp{
 			router: new SlashrAppRouter(slashr, options),
 			config: options.config,
 			routes: options.routes,
-			defaultLayout: options.defaultLayout || null
+			defaultLayout: options.defaultLayout || null,
+			utilities: slashr.utils
 		}
 
 	}
@@ -492,6 +499,12 @@ class SlashrApp{
 	}
 	get routes(){
 		return this._metadata.routes;
+	}
+	get utilities(){
+		return this._metadata.utilities;
+	}
+	get utils(){
+		return this._metadata.utilities;
 	}
 	get defaultLayout(){
 		return this._metadata.defaultLayout;
@@ -551,6 +564,12 @@ class SlashrDomain{
 	}
 	get mdl(){
 		return this.model;
+	}
+	get utilities(){
+		return Slashr.getInstance().app.utils;
+	}
+	get utils(){
+		return this.utilities;
 	}
 	setState(values){
 		mobxSet(this, values);

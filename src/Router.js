@@ -122,7 +122,6 @@ export const _Router = inject("slashr")(observer(
 					}
 				
 					if (match && match.isExact) {
-						console.log("check route views",viewName,match);
 						currViews[viewName] = true;
 						hasMatch = true;
 						this.initializeActionResult(viewName, route.controller, route.action, match.params);
@@ -310,7 +309,7 @@ export const RouteLink = inject("slashr")(observer(
 		}
 		handleClick(e) {
 			e.preventDefault();
-			e.stopPropagation();
+			// e.stopPropagation();
 			if(this.props.onClick) this.props.onClick(e);
 			this.props.slashr.app.router.push(this.routeProps);
 		}
