@@ -109,13 +109,42 @@ class SlashrRouter{
 		//this._routes[name].update(route, component);
 		return this._views[name];
 	}
+	async load(routeData, routerViewName, options={}){
+		// controllerName = Slashr.utils.str.capitalize(controllerName);
+		
+		// // const Controller = require(`../../controllers/${controllerName}Controller`);
+		let Controller = routeData.controller;
+		let actionName = routeData.action || "default";
+		console.log("router action",route);
+
+		let route = new SlashrRoute(this._slashr, route, routerViewName, options);
+
+
+		// console.log("feed check controller",`../../controllers/${controllerName}Controller`,Controller);
+		// //console.log("feed look at this",Controller[`${controllerName}Controller`].prototype.defaultAction.toString());
+		let controller = new Controller(this.view(routerViewName));
+		//let controller = new Controller[`${controllerName}Controller`](this.props.domain);
+		let actionMethod = `${actionName}Action`;
+
+		if (!controller[actionMethod]) throw (`Controller Error: ${actionMethod} not found in controller ${controller.constructor.name}`);
+
+		this.handleLoading(route.view);
+
+		route.component = await controller[actionMethod]({...route.data.query,...route.data.params});
+		
+		this.handleLoaded(route.view);
+		this.update(route);
+
+		return true;
+
+	}
 	hasRoute(name){
 		if(! this._views[name]) return false;
 		return this._views[name].hasRoute;
 	}
-	update(name, component, props){
+	update(route){
 		if(! this._views[name]) return false;
-		return this._views[name].update(component, props);
+		return this._views[name].update(route);
 	}
 	reset(name){
 		if(! this._views[name]) return false;
@@ -221,6 +250,44 @@ class SlashrRouter{
 	}
 }
 
+class SlashrRoute{
+	constructor(slashr,route,routerViewName, options = {}){
+		this._slashr = slashr;
+		this._metadata = {
+			route: route,
+			view: routerViewName,
+			data: {
+				params: (options.match) ? options.match.params : {},
+				query: {}
+			},
+			location: options.location || {},
+			component: null
+		}
+		if(options.location && options.location.search){
+			let searchParams = new URLSearchParams(options.location.search.substring(1));
+			for (let key of searchParams.keys()) {
+				this._metadata.data.query[key] = searchParams.get(key);
+			}
+		}
+	}
+	get data(){
+		return this._metadata.data;
+	}
+	get component(){
+		return this._metadata.component;
+	}
+	set component(component){
+		this._metadata.component = component;
+		return this;
+	}
+	get location(){
+		return this._metadata.view;
+	}
+	get view(){
+		return this._metadata.view;
+	}
+}
+
 class SlashrRouterView{
 	_uid = null;
 	_component = null;
@@ -281,16 +348,15 @@ class SlashrRouterView{
 		this._hasLoaded = false;
 		this._uid = null;
 	}
-	update(component, props){
-		this._component = component;
+	update(route){
+		this._component = route.component;
 		this._location = null;
 		//this._routerName = (props.location.state && props.location.state.router) || "default";
 		this._ui = {};
 		this._hasLoaded = true;
 
-		if(props.location){
-			let location = null;
-			let routerState = (props.location.state && props.location.state._slashr) ? props.location.state._slashr.router : {};
+		if(route.location){
+			let routerState = (route.location.state && route.location.state._slashr) ? route.location.state._slashr.router : {};
 			
 			if(routerState.views){
 				for(let name in routerState.views){
@@ -308,15 +374,15 @@ class SlashrRouterView{
 			
 			if(! this._location){
 				this._location = {
-					pathname: props.location.pathname,
+					pathname: route.location.pathname,
 					// state: props.location.state,
-					search: props.location.search
+					search: route.location.search
 				};
-				if(props.location.state){
+				if(route.location.state){
 					//alert("filter state");
 					//this._location.state = props.location.state;
 				}
-				if(props.location.search) this._location.search = props.location.search;
+				if(route.location.search) route._location.search = route.location.search;
 			}
 		}
 		let uid = (this._location) ? this._location.pathname + this._location.search : null;
@@ -385,10 +451,25 @@ decorate(SlashrRouterView, {
 	_uid: observable
 });
 
+
+// let appRoute = new SlashrAppRoute(route,{
+// 	view: routerViewName,
+// 	location: this.props.location,
+// 	match: match,
+// 	component: null
+// });
+
 class SlashrAppRouter{
-	constructor(slashr){
+	constructor(slashr, options = {}){
 		this._slashr = slashr;
+		this._metadata = {
+			scrollBehavior: options.scrollBehavior
+		}
 	}
+	get metadata(){
+		return this._metadata;
+	}
+	
 	// can also be route, options
 	_createState(route, options){
 
@@ -450,6 +531,7 @@ class SlashrAppRouter{
 
 		switch(type){
 			case "push":
+
 				this._slashr.router.history.push(route, state);
 				break;
 			case "replace":
@@ -481,7 +563,7 @@ class SlashrApp{
 			config: options.config,
 			routes: options.routes,
 			defaultLayout: options.defaultLayout || null,
-			utilities: slashr.utils
+			utilities: slashr.utils,
 		}
 
 	}

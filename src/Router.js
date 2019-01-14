@@ -24,51 +24,76 @@ export const _Router = inject("slashr")(observer(
 			//this.updateRoutes();
 			this.props.slashr.router.initialize(props);
 		}
-		async initializeActionResult(routerViewName, Controller, actionName = "default", params = {}) {
+		async initializeActionResult(routerViewName, route, match) {
+			let Controller = route.controller;
+			
+			let appRoute = await this.props.slashr.router.load(route, routerViewName,
+				{
+					location: this.props.location,
+					match: match
+				}
+			);
+
+			return true;
+
 			// controllerName = Slashr.utils.str.capitalize(controllerName);
 			
 			// // const Controller = require(`../../controllers/${controllerName}Controller`);
 
 			// console.log("feed check controller",`../../controllers/${controllerName}Controller`,Controller);
 			// //console.log("feed look at this",Controller[`${controllerName}Controller`].prototype.defaultAction.toString());
-			let controller = new Controller(this.props.slashr.router.view(routerViewName), this.props.domain);
-			//let controller = new Controller[`${controllerName}Controller`](this.props.domain);
-			let actionMethod = `${actionName}Action`;
+			// let controller = new Controller(this.props.slashr.router.view(routerViewName), this.props.domain);
+			// //let controller = new Controller[`${controllerName}Controller`](this.props.domain);
+			// let actionMethod = `${actionName}Action`;
 
-			if (!controller[actionMethod]) throw (`Controller Error: ${actionMethod} not found in controller ${controller.constructor.name}`);
+			// if (!controller[actionMethod]) throw (`Controller Error: ${actionMethod} not found in controller ${controller.constructor.name}`);
 
-			this.props.slashr.router.handleLoading(routerViewName);
-			// Add Url Query Variables to params
-			let searchParams = new URLSearchParams(this.props.location.search.substring(1));
+			// this.props.slashr.router.handleLoading(routerViewName);
 
-			for (let key of searchParams.keys()) {
-				if (key in params) continue;
-				params[key] = searchParams.get(key);
-			}
+			// let routeData = {
+			// 	params: match.params || {}
+			// };
 
-			let rslt = await controller[actionMethod](params);
+			
 
-			// let component = null;
-			// if(Component instanceof SlashrControllerActionComponentResult){
-			// 	component = rslt.render;
+			
+			// // Add Url Query Variables to params
+			// let searchParams = new URLSearchParams(this.props.location.search.substring(1));
+
+			// // console.log("initializeActionResult",routerViewName, route, match);
+
+			// // throw("SLDKJF");
+
+			// for (let key of searchParams.keys()) {
+			// 	if (key in params) continue;
+			// 	params[key] = searchParams.get(key);
 			// }
-			// else component = rslt;
-			let component = rslt;
 
-			this.props.slashr.router.handleLoaded(routerViewName);
+			// let rslt = await controller[actionMethod](params);
 
-			//this.location = this.props.location;
-			//this.component = component;
-			//this.component = React.cloneElement(component,{path: this.location.pathName});
+			// // let component = null;
+			// // if(Component instanceof SlashrControllerActionComponentResult){
+			// // 	component = rslt.render;
+			// // }
+			// // else component = rslt;
+			// appRoute.component = rslt;
 
-			// this.setState({
-			// 	path: this.location.pathname
-			// }); 
+			// this.props.slashr.router.handleLoaded(appRoute);
 
-			this.props.slashr.router.update(routerViewName, component, this.props);
+			// //this.location = this.props.location;
+			// //this.component = component;
+			// //this.component = React.cloneElement(component,{path: this.location.pathName});
+
+			// // this.setState({
+			// // 	path: this.location.pathname
+			// // }); 
+
+			// this.props.slashr.router.update(appRoute);
+
+			return true;
 
 		}
-		updateRoutes(options = {}) {
+		async updateRoutes(prevLocation) {
 			let component = null;
 			let route = null;
 			let isFound = false;
@@ -77,7 +102,7 @@ export const _Router = inject("slashr")(observer(
 			let routerState = (this.props.location.state && this.props.location.state._slashr) ? this.props.location.state._slashr.router : {};
 
 			console.log("update routes",routerState);
-
+			let promises = [];
 			let currViewName = (routerState && routerState.view) || "default";
 			let hasMatch = false;
 			let currViews = {};
@@ -124,7 +149,12 @@ export const _Router = inject("slashr")(observer(
 					if (match && match.isExact) {
 						currViews[viewName] = true;
 						hasMatch = true;
-						this.initializeActionResult(viewName, route.controller, route.action, match.params);
+
+
+
+						promises.push(
+							this.initializeActionResult(viewName, route, match)
+						);
 						break;
 					}
 					//throw("SKLDJF");
@@ -143,6 +173,13 @@ export const _Router = inject("slashr")(observer(
 					this.props.slashr.router.views[view].reset();
 				}
 			}
+			console.log(promises);
+			//aleralert("start");
+			
+			await Promise.all(promises);
+
+			alert("All DOne!");
+
 		}
 		componentDidMount() {
 			this.updateRoutes();
@@ -152,7 +189,7 @@ export const _Router = inject("slashr")(observer(
 		componentDidUpdate(prevProps) {
 			if (this.props.location.pathname !== prevProps.location.pathname || this.props.location.search !== prevProps.location.search) {
 				this.props.slashr.router.initialize(this.props);
-				this.updateRoutes();
+				this.updateRoutes(prevProps.location);
 			}
 		}
 		componentWillReact() {
