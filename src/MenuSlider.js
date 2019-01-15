@@ -13,6 +13,7 @@ export class MenuSliderDomain{
 	constructor(name, props){
 		if(! name) throw("Menu Slider Error: Name Required");
 		this._items = [];
+		this._slashr = Slashr.getInstance();
 		this._activeItem = props.activeItem || null;
 		this._scrollToItem = props.activeItem || null;
 		this._name = name;
@@ -120,7 +121,7 @@ export class MenuSlider extends React.Component {
 }
 
 
-export const _MenuSlider = inject("menuSlider")(observer(
+export const _MenuSlider = inject("menuSlider","slashr")(observer(
 	class _MenuSlider extends React.Component {
 		constructor(props) {
 			super(props);
@@ -128,17 +129,24 @@ export const _MenuSlider = inject("menuSlider")(observer(
 			// 	console.log("menuSlider",item, item.props);
 			// })
 			//this.scrollToItem = true;
+			// this._slashr = this.props.menuSlider._slashr;
 		}
 		componentDidMount(){
 			//this.props.menuSlider.initialize();
 		}
 		componentWillReact(){
-			console.log("PROFILE UID REACT REACT!!!!!!!!!!!!!!!!!",this.props.activeItem, this.props.menuSlider.activeItem);
-			if(this.props.scrollToItem !== this.props.menuSlider.scrollToItem){
-				this.props.menuSlider.scrollToItem = this.props.scrollToItem;
-			}
+			//console.log("menu slider",this.props.slashr.router.history.action,this.props.activeItem, this.props.menuSlider.activeItem);
+			// if(this.props.scrollToItem !== this.props.menuSlider.scrollToItem){
+			// 	this.props.menuSlider.scrollToItem = this.props.scrollToItem;
+			// }
+
+			// console.log("menu slider location",this.props.slashr.router.location.pathname,this.props.slashr.router.location.search);
+
 			if(this.props.activeItem !== this.props.menuSlider.activeItem){
 				this.props.menuSlider.activeItem = this.props.activeItem;
+				if(this.props.slashr.router.history.action && this.props.slashr.router.history.action === "POP"){
+					this.props.menuSlider.scrollToItem = this.props.menuSlider.activeItem;
+				}
 			}
 
 			// if(this.props.activeItem === this.props.menuSlider.activeItem){
@@ -167,6 +175,7 @@ export const _MenuSlider = inject("menuSlider")(observer(
 			// this.props.items.forEach((item)=>{
 			// 	console.log("menu item",item.props.name);
 			// });
+			//alert(this.props.menuSlider.scrollToItem);
 			return(
 				<Container
 					className="menu-slider"

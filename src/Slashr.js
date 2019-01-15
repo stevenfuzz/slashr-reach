@@ -43,6 +43,7 @@ export class Slashr {
 	};
 	// Connects commpontent as app observer
 	static connect(component){
+		
 		return inject("app")(observer(component));
 	}
 	// static get ui() {
@@ -93,11 +94,12 @@ class SlashrRouter{
 		this._isInitialized = false;
 		this._activeViewName = "default";
 		this._activeRouteName = null;
-
+		this._route = null;
 	}
 	initialize(options){
 		if(! options.location) throw("Router error: No location."); 
 		if(! options.history) throw("Router error: No history."); 
+		console.log("scroll behave history state",options.location.state);
 		//if(this._location) this._prevLocation = this._location;
 		this._location = options.location;
 		this._history = options.history;
@@ -109,16 +111,17 @@ class SlashrRouter{
 		//this._routes[name].update(route, component);
 		return this._views[name];
 	}
+	createAppInstance(routerViewName){
+		return new SlashrRouterAppInstance(this._slashr, routerViewName);
+	}
 	async load(routeData, routerViewName, options={}){
 		// controllerName = Slashr.utils.str.capitalize(controllerName);
 		
 		// // const Controller = require(`../../controllers/${controllerName}Controller`);
 		let Controller = routeData.controller;
 		let actionName = routeData.action || "default";
-		console.log("router action",route);
 
-		let route = new SlashrRoute(this._slashr, route, routerViewName, options);
-
+		let route = new SlashrRoute(this._slashr, routeData, routerViewName, options);
 
 		// console.log("feed check controller",`../../controllers/${controllerName}Controller`,Controller);
 		// //console.log("feed look at this",Controller[`${controllerName}Controller`].prototype.defaultAction.toString());
@@ -130,12 +133,13 @@ class SlashrRouter{
 
 		this.handleLoading(route.view);
 
-		route.component = await controller[actionMethod]({...route.data.query,...route.data.params});
-		
+		route.component = await controller[actionMethod](route.data);
+
 		this.handleLoaded(route.view);
+		
 		this.update(route);
 
-		return true;
+		return route;
 
 	}
 	hasRoute(name){
@@ -143,8 +147,8 @@ class SlashrRouter{
 		return this._views[name].hasRoute;
 	}
 	update(route){
-		if(! this._views[name]) return false;
-		return this._views[name].update(route);
+		if(! this._views[route.view]) return false;
+		return this._views[route.view].update(route);
 	}
 	reset(name){
 		if(! this._views[name]) return false;
@@ -242,24 +246,38 @@ class SlashrRouter{
 	get views(){
 		return this._views;
 	}
+	set activeViewName(activeViewName){
+		this._activeViewName = activeViewName;
+		return this;
+	}
 	get activeViewName(){
 		return this._activeViewName;
+	}
+	get activeView(){
+		return this.views[this.activeViewName];
 	}
 	get activeRouteName(){
 		return this._activeRouteName;
 	}
+	get route(){
+		console.log("scroll behav get route from router",this.activeViewName,this.views[this.activeViewName],this.views[this.activeViewName].route);
+		return this.views[this.activeViewName].route;
+	}
 }
 
 class SlashrRoute{
-	constructor(slashr,route,routerViewName, options = {}){
+	constructor(slashr,routeData,routerViewName, options = {}){
 		this._slashr = slashr;
 		this._metadata = {
-			route: route,
+			route: routeData,
 			view: routerViewName,
+			path: options.location.pathname,
 			data: {
 				params: (options.match) ? options.match.params : {},
 				query: {}
 			},
+			// params: (options.match) ? options.match.params : {},
+			// query: {},
 			location: options.location || {},
 			component: null
 		}
@@ -281,10 +299,32 @@ class SlashrRoute{
 		return this;
 	}
 	get location(){
-		return this._metadata.view;
+		return this._metadata.location;
 	}
 	get view(){
 		return this._metadata.view;
+	}
+	get params(){
+		return this._metadata.data.params;
+	}
+	get query(){
+		return this._metadata.data.query;
+	}
+	get qry(){
+		return this.query;
+	}
+	get data(){
+		return {...this.query,...this.params};
+	}
+	get dt(){
+		return this.data;
+	}
+	get path(){
+		return this.path;
+	}
+	get name(){
+		console.log("route metadata",this._metadata);
+		return this._metadata.route.name || null;
 	}
 }
 
@@ -297,6 +337,7 @@ class SlashrRouterView{
 	constructor(router, name, props){
 		this._name = name;
 		this._router = router;
+		this._route = null;
 		this._onLoading = props.onLoading || null;
 		this._onLoaded = props.onLoaded || null;
 		this._location = this.parseLocation();
@@ -349,6 +390,7 @@ class SlashrRouterView{
 		this._uid = null;
 	}
 	update(route){
+		this._route = route;
 		this._component = route.component;
 		this._location = null;
 		//this._routerName = (props.location.state && props.location.state.router) || "default";
@@ -382,7 +424,7 @@ class SlashrRouterView{
 					//alert("filter state");
 					//this._location.state = props.location.state;
 				}
-				if(route.location.search) route._location.search = route.location.search;
+				if(route.location.search) this._location.search = route.location.search;
 			}
 		}
 		let uid = (this._location) ? this._location.pathname + this._location.search : null;
@@ -445,6 +487,9 @@ class SlashrRouterView{
 	get isInitialized(){
 		return this._uid ? true : false;
 	}
+	get route(){
+		return this._route;
+	}
 }
 decorate(SlashrRouterView, {
 	// component: computed,
@@ -462,9 +507,9 @@ decorate(SlashrRouterView, {
 class SlashrAppRouter{
 	constructor(slashr, options = {}){
 		this._slashr = slashr;
-		this._metadata = {
-			scrollBehavior: options.scrollBehavior
-		}
+		// this._metadata = {
+		// 	scrollBehavior: options.scrollBehavior
+		// }
 	}
 	get metadata(){
 		return this._metadata;
@@ -497,6 +542,8 @@ class SlashrAppRouter{
 
 
 		let state = this._slashr.router.createState(options);
+
+		console.log("created state",JSON.stringify(state));
 
 		// Check if the next view is modal
 		// If not, remove any modal views
@@ -532,6 +579,13 @@ class SlashrAppRouter{
 		switch(type){
 			case "push":
 
+				// this._slashr.router.updateUiState(view, {
+				// 	scroll: {
+				// 		x: window.scrollX,
+				// 		y: window.scrollY
+				// 	}
+				// });
+
 				this._slashr.router.history.push(route, state);
 				break;
 			case "replace":
@@ -545,12 +599,34 @@ class SlashrAppRouter{
 	replace(route, options){
 		this._updateRoute("replace",route,options);
 	}
-	location(){
+	
+	get location(){
 		return this._slashr.router.location;
 	}
-	history(){
+	get history(){
 		return this._slashr.router.history;
 	}
+	get route(){
+		return this._slashr.router.route;
+	}
+}
+class SlashrRouterAppInstance{
+	constructor(slashr, routerViewName){
+		return new Proxy(this, {
+			get : function(obj, prop){
+				
+				switch(prop){
+					case "route":
+					case "rt":
+						console.log("app get route",slashr.router.views[routerViewName].route);
+						return slashr.router.views[routerViewName].route;
+						break;
+					default:
+						return slashr.app[prop];
+					}
+				}
+		});	
+	}	
 }
 class SlashrApp{
 	constructor(slashr, options){
@@ -564,8 +640,8 @@ class SlashrApp{
 			routes: options.routes,
 			defaultLayout: options.defaultLayout || null,
 			utilities: slashr.utils,
+			scrollBehavior: options.scrollBehavior || null
 		}
-
 	}
 	get router(){
 		return this._metadata.router;
@@ -593,6 +669,9 @@ class SlashrApp{
 	}
 	get config(){
 		return this._metadata.config;
+	}
+	get scrollBehavior(){
+		return this._metadata.scrollBehavior;
 	}
 }
 
@@ -2154,7 +2233,6 @@ export class ContainerLink extends React.Component {
 				{this.props.children}
 			</div>
 		);
-		
 	}
 };
 
@@ -2906,6 +2984,8 @@ export class SlashrUiGrid {
 	}
 	updateHistory() {
 		if(! this._route) return;
+		// Make sure the update is on the correct route.
+		if(this._slashr.router.route.view !== this._route.name) return;
 
 		let lastVisiblePage = 0;
 		for(let page in this._metadata.visiblePages){
@@ -2925,13 +3005,10 @@ export class SlashrUiGrid {
 		}
 
 		// let section = this.props.grid.sections[this.props.section];
-		console.log("GRID state UPDATE HISTORY,",this._slashr.router.slashrState);
-
 		// let routeState = this._route.location.state || {};	
 		let uiState =this._slashr.router.getUiState(this._route.name);
 
 		let gridState = uiState.grid || {};
-		console.log("grid state",gridState);
 
 		if(! gridState.grids) gridState.grids = {};
 
@@ -2961,6 +3038,8 @@ export class SlashrUiGrid {
 			}
 		}
 		gridState.scrollY = scrollY;
+
+		console.log("update history",this._route.name,scrollY);
 		
 		// console.log("grid handle intersect state", this.props.section, section.ref.current, gridState[this.name]);
 		//state._slashrUiGrid = gridState;
@@ -2968,6 +3047,10 @@ export class SlashrUiGrid {
 		console.log("grid state Updating slashr state",JSON.stringify(gridState));
 
 		this._slashr.router.updateUiState(this._route.name, {
+			scroll: {
+				x: window.scrollX,
+				y: window.scrollY
+			},
 			grid: gridState
 		});
 		
@@ -3638,22 +3721,23 @@ export const _GridLoader = inject("slashr")(observer(
 
 			// Set scroll restoration to manual
 			if (this.grid.router) {
-				if (window.history && window.history.scrollRestoration) {
-					window.history.scrollRestoration = "manual";
-				}
+				// if (window.history && window.history.scrollRestoration) {
+				// 	window.history.scrollRestoration = "manual";
+				// }
 			}
 		}
 		componentDidMount() {
-			if (this.grid.history && this.grid.initialScrollY) {
-				setTimeout(()=>{
-					Slashr.utils.dom.scrollTop(this.grid.initialScrollY);
-					//Slashr.utils.dom.scrollTop(this.props.grid.history.offset.top);
-				},300);
-			}
-			else setTimeout(()=>{
-					Slashr.utils.dom.scrollTop();
-					//Slashr.utils.dom.scrollTop(this.props.grid.history.offset.top);
-				},300);
+			// Moved to router
+			// if (this.grid.history && this.grid.initialScrollY) {
+			// 	setTimeout(()=>{
+			// 		Slashr.utils.dom.scrollTop(this.grid.initialScrollY);
+			// 		//Slashr.utils.dom.scrollTop(this.props.grid.history.offset.top);
+			// 	},300);
+			// }
+			// else setTimeout(()=>{
+			// 		Slashr.utils.dom.scrollTop();
+			// 		//Slashr.utils.dom.scrollTop(this.props.grid.history.offset.top);
+			// 	},300);
 			this.grid.load();
 		}
 		componentWillReact() {
@@ -5455,6 +5539,22 @@ export class SlashrDomUtils {
 		}
 		if (options.offsetTop) offset.top -= options.offsetTop;
 		this.scrollTo(offset.left, offset.top);
+	}
+	getBodyWidth(){
+		var body = document.body;
+		var html = document.documentElement;
+		return Math.max(body.scrollWidth, body.offsetWidth, body.getBoundingClientRect().width, html.clientWidth, html.scrollWidth, html.offsetWidth);
+	}
+	getBodyHeight(){
+		var body = document.body;
+		var html = document.documentElement;
+		return Math.max(body.scrollHeight, body.offsetHeight, body.getBoundingClientRect().height, html.clientHeight, html.scrollHeight, html.offsetHeight);
+	}
+	getBodySize(){
+		return {
+			x: this.getBodyWidth(),
+			y: this.getBodyHeight()
+		};
 	}
 }
 export class SlashrStringUtils {

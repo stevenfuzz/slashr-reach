@@ -20,21 +20,30 @@ export const _Router = inject("slashr")(observer(
 			this.app = this.props.slashr.app;
 			//this.props.location.state.router
 			this.location = this.props.location;
+			this.route = null;
+			this.prevRoute = null;
+			this.doUpdateScroll = false;
+			this.scrollUpdateAttempts = 0;
 
+			//TODO: Where do I put this?
+			if (window.history && window.history.scrollRestoration) {
+				window.history.scrollRestoration = "manual";
+			}
 			//this.updateRoutes();
 			this.props.slashr.router.initialize(props);
 		}
 		async initializeActionResult(routerViewName, route, match) {
-			let Controller = route.controller;
+			//let Controller = route.controller;
 			
-			let appRoute = await this.props.slashr.router.load(route, routerViewName,
+			console.log("app route init",routerViewName,route, match);
+
+			return await this.props.slashr.router.load(route, routerViewName,
 				{
 					location: this.props.location,
 					match: match
 				}
 			);
 
-			return true;
 
 			// controllerName = Slashr.utils.str.capitalize(controllerName);
 			
@@ -90,76 +99,88 @@ export const _Router = inject("slashr")(observer(
 
 			// this.props.slashr.router.update(appRoute);
 
-			return true;
+			//return true;
 
 		}
 		async updateRoutes(prevLocation) {
 			let component = null;
-			let route = null;
+			// let route = null;
 			let isFound = false;
 			// let locationState = this.props.location.state || {};
 			// Update the router
 			let routerState = (this.props.location.state && this.props.location.state._slashr) ? this.props.location.state._slashr.router : {};
 
-			console.log("update routes",routerState);
+			let prevRoute = this.app.router.route;
+
 			let promises = [];
 			let currViewName = (routerState && routerState.view) || "default";
 			let hasMatch = false;
 			let currViews = {};
 			//TODO: Rewrite this is a total mess. Refactor and simplify
 			let t = 0;
-			for (let route of this.app.routes) {
-				if(! route.controller) throw("No Controller Found for route");
-					
-				for (let viewName in this.props.slashr.router.views) {
-					// console.log("CHECK ROUTER",viewName,route,++t);
-					if(currViews[viewName]) continue;
-					//console.log("ROUTER STATE",routerState.views);
-					let match = false;
-					let routerView = this.props.slashr.router.views[viewName];
+			for (let routeData of this.app.routes) {
 
-					if (routerState.views && routerState.views[viewName] && this.props.slashr.router.views[viewName]) {
-						// Check if not loaded, or changed
-						match = matchPath(routerState.views[viewName].pathname, route.path);
-						if (match && match.isExact) {
-							// Always refresh the currentview route
-							//viewName !== currViewName && 
-							if (routerView.hasLoaded && routerState.views[viewName].pathname === routerView.location.pathname
-								&& routerState.views[viewName].search === routerView.location.search) {
-								currViews[viewName] = true;
-								match = false;
-								break;
-							}
-						}
-					}
-					else if (viewName === currViewName) {
-						// throw("Should this exist?");
-						match = matchPath(this.props.location.pathname, route.path);
-						if (match && match.isExact) {
-							if (routerView.hasLoaded
-								&& this.props.location.pathname === routerView.location.pathname
-								&& this.props.location.search === routerView.location.search) {
-								currViews[viewName] = true;
-								match = false;
-								break;
-							}
-						}
-					}
-				
-					if (match && match.isExact) {
-						currViews[viewName] = true;
-						hasMatch = true;
-
-
-
-						promises.push(
-							this.initializeActionResult(viewName, route, match)
-						);
-						break;
-					}
-					//throw("SKLDJF");
-
+				let paths = [routeData.path];
+				if(routeData.alias){
+					if(typeof routeData.alias === 'string') paths.push(routeData.alias);
+					else routeData.alias.forEach((path)=>{
+						routeData.push(path);
+					})
 				}
+
+				for(let path of paths){
+					if(! routeData.controller) throw("No Controller Found for route");
+						
+					for (let viewName in this.props.slashr.router.views) {
+						// console.log("CHECK ROUTER",viewName,route,++t);
+						if(currViews[viewName]) continue;
+						//console.log("ROUTER STATE",routerState.views);
+						let match = false;
+						let routerView = this.props.slashr.router.views[viewName];
+
+						if (routerState.views && routerState.views[viewName] && this.props.slashr.router.views[viewName]) {
+							// Check if not loaded, or changed
+							match = matchPath(routerState.views[viewName].pathname, path);
+							if (match && match.isExact) {
+								// Always refresh the currentview route
+								//viewName !== currViewName && 
+								if (routerView.hasLoaded && routerState.views[viewName].pathname === routerView.location.pathname
+									&& routerState.views[viewName].search === routerView.location.search) {
+									currViews[viewName] = true;
+									match = false;
+									break;
+								}
+							}
+						}
+						else if (viewName === currViewName) {
+							// throw("Should this exist?");
+							match = matchPath(this.props.location.pathname, path);
+							if (match && match.isExact) {
+								if (routerView.hasLoaded
+									&& this.props.location.pathname === routerView.location.pathname
+									&& this.props.location.search === routerView.location.search) {
+									currViews[viewName] = true;
+									match = false;
+									break;
+								}
+							}
+						}
+					
+						if (match && match.isExact) {
+							currViews[viewName] = true;
+							hasMatch = true;
+
+							promises.push(
+								this.initializeActionResult(viewName, routeData, match)
+							);
+							break;
+						}
+						//throw("SKLDJF");
+
+					}
+					if(hasMatch) break;
+				}
+
 
 			}
 				//if(hasMatch) break;
@@ -173,12 +194,20 @@ export const _Router = inject("slashr")(observer(
 					this.props.slashr.router.views[view].reset();
 				}
 			}
-			console.log(promises);
+			console.log("app routers",this.props.slashr.router.views);
 			//aleralert("start");
 			
 			await Promise.all(promises);
 
-			alert("All DOne!");
+			// Update the routes
+			this.props.slashr.router.activeViewName = currViewName;
+			this.route = this.app.router.route;
+			this.prevRoute = prevRoute;
+			// this.currViewName = currViewName;
+
+			this.doUpdateScroll = true;
+
+			this.handleScrollBehavoir();
 
 		}
 		componentDidMount() {
@@ -194,6 +223,49 @@ export const _Router = inject("slashr")(observer(
 		}
 		componentWillReact() {
 
+		}
+		updateScroll(pos){
+			// Poll for the body to be big enough, then scroll
+			// If more than 1 second, just give up and set it
+			let bodySize = this.props.slashr.utils.dom.getBodySize();
+			//console.log("update scroll",window.scrollY,pos.y,pos,this.scrollUpdateAttempts);
+			//console.log("update scroll x",document.documentElement.clientWidth, window.scrollX,pos.x,window.scrollx >= pos.x);
+			// console.log("update scroll",bodySize,pos);
+			if(this.scrollUpdateAttempts >= 100  || 
+				(bodySize.y >= pos.y && bodySize.x >= pos.x)){
+				this.props.slashr.utils.dom.scrollTo(pos.x, pos.y);
+				this.scrollUpdateAttempts = 0;
+			}
+			else{
+				this.scrollUpdateAttempts++;
+				setTimeout(()=>{
+					this.updateScroll(pos);
+				},10);
+			}
+		}
+		handleScrollBehavoir(){
+			//TODO: Move this out of component?
+			if(this.app.scrollBehavior){
+				let uiState = this.props.slashr.router.getUiState(this.props.slashr.router.route.view);
+				let scroll = (uiState && uiState.scroll) ? uiState.scroll : false;
+				console.log("handleScrollBehavoir uistate: ",uiState);
+
+
+				console.log("scroll behav check modal",this.route.isModal);
+
+				let ret = this.app.scrollBehavior(this.route, this.prevRoute, scroll);
+				if(ret){
+					
+					// wait for the document to become big enough
+					let attempts = 0;
+					let scrollTimeout = setTimeout(()=>{
+						//window.scrollTo
+					},100);
+
+					// Check to see if it's ok to scroll
+					this.updateScroll(ret);
+				}
+			}
 		}
 		render() {
 			let Layout = this.app.defaultLayout;
@@ -212,6 +284,7 @@ export const RouterView = inject("slashr")(observer(
 			this.slashr = this.props.slashr;
 			if (!this.slashr.app.routes) throw ("Router Error: No routes found.");
 			this.slashr.router.create(this.name, props);
+			this.appContext = this.props.slashr.router.createAppInstance(this.name);
 		}
 		render() {
 			let component = this.props.loader || null;
@@ -221,14 +294,18 @@ export const RouterView = inject("slashr")(observer(
 					// <React.Fragment
 					// 	// key={this.props.slashr.router.view(this.name).pathname}
 					// >
-						<Provider route={this.props.slashr.router.view(this.name)}>
+					//route={this.props.slashr.router.view(this.name)}
+						<Provider 
+							app={this.appContext} 
+							route={this.props.slashr.router.view(this.name)}
+						>
 							{routeComponent}
 						</Provider>
 
 					// </React.Fragment>
 				);
 			}
-
+			console.log("app route Return component",routeComponent);
 			return component;
 			// console.log("RENDER ROUTER");
 			// let component = null;
@@ -476,11 +553,15 @@ export const RouteDialog = inject("slashr")(observer(
 
 			console.log("TODO: USE APP ROUTER USE APP ROUTER");
 
+			let pushState = this.slashr.router.createState({
+				view: "default"
+			});
+
+			console.log("pushing state",pushState);
+
 			this.slashr.router.history.push({
 				pathname: routerView.location.pathname,
-				state: this.slashr.router.createState({
-					view: "default"
-				}),
+				state:pushState,
 				search: routerView.location.search || ""
 			});
 
