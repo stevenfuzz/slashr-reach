@@ -161,7 +161,7 @@ export const TextEditor = inject(["form"])(observer(
 			// : (Schema) → Plugin
 			// A set of input rules for creating the basic block quotes, lists,
 			// code blocks, and heading.
-			console.log("TODO: Move textarea stuff out to methods");
+			//console.log("TODO: Move textarea stuff out to methods");
 
 
 
@@ -546,7 +546,7 @@ export const TextEditorLinkDialog = inject(["form"])(observer(
 		}
 		componentDidMount(){
 			// console.log(this.editor.ref);
-			// console.log("TODO: This seams kind of hacky");
+			// //console.log("TODO: This seams kind of hacky");
 			// window.requestAnimationFrame(()=>{
 			// 	console.log(this.editor.ref);
 			// 	console.log("SDLFKJLSDKJFLSKDJF");

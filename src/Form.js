@@ -34,7 +34,7 @@ class FormDomain {
 		this._control = null;
 		this._handleSubmit = this._handleSubmit.bind(this);
 		this._handleReset = this._handleReset.bind(this);
-		console.log("TODO: Move default form validators");
+		//console.log("TODO: Move default form validators");
 
 		this._onSubmit = props.onSubmit;
 		this._onReset = props.onReset || null;
@@ -139,7 +139,7 @@ class FormDomain {
 
 			if (!this.elmts[name].isFile() && typeof value === 'object') {
 				if (value.getTime) {
-					console.log("TODO: Find better way to see if date");
+					//console.log("TODO: Find better way to see if date");
 					value = value.getTime();
 					formMetadata.elmts[name].dataType = "date";
 				}
@@ -804,7 +804,7 @@ export const Input = inject(["form"])(observer(
 			if(props.autoFocus) nProps.autoFocus = true;
 			this.elmt = this.props.form._addElement(this, { props: nProps });
 
-			console.log("TODO: Form element templates");
+			//console.log("TODO: Form element templates");
 
 		}
 		updateValueByEvent(event) {
@@ -1038,7 +1038,6 @@ export const ImageSelectButton = inject("form")(observer(
 	class ImageSelectButton extends React.Component {
 		constructor(props) {
 			super(props);
-			console.log("IMAGE SELECT BUTTON CONST");
 			if (!this.props.button) throw ("Image Select Button tag error. Must define select button.");
 			this.handleImageChange = this.handleImageChange.bind(this);
 
@@ -1210,7 +1209,7 @@ export const SelectNative = inject(["form"])(observer(
 			};
 
 			this.elmt = this.props.form._addElement(this, { props: nProps });
-			console.log("TODO: Form element templates");
+			//console.log("TODO: Form element templates");
 
 		}
 		updateValueByEvent(event) {
@@ -1271,7 +1270,7 @@ export const SocialInput = inject(["form"])(observer(
 			};
 
 			this.elmt = this.props.form._addElement(this, { props: nProps });
-			console.log("TODO: Form element templates");
+			//console.log("TODO: Form element templates");
 
 		}
 		updateValueByEvent(event) {
@@ -1378,7 +1377,7 @@ export const Select = inject(["form"])(observer(
 			};
 
 			this.elmt = this.props.form._addElement(this, { props: nProps });
-			console.log("TODO: Form element templates");
+			//console.log("TODO: Form element templates");
 
 		}
 		updateValueByEvent(value) {
@@ -1448,7 +1447,7 @@ export const AutoComplete = inject(["form"])(observer(
 			this.onLoadOptions = this.onLoadOptions.bind(this);
 			this.noOptionsMessage = this.noOptionsMessage.bind(this);
 
-			console.log("TODO: shoud no opts message send a object?? curr sends inputval in obj");
+			//console.log("TODO: shoud no opts message send a object?? curr sends inputval in obj");
 
 			if (!this.props.onLoadOptions) throw ("Error: AutoComplete requires onLoadOptions function");
 
@@ -1681,7 +1680,7 @@ export const ToggleSwitch = inject(["form"])(observer(
 				type: "checkbox",
 			};
 			this.elmt = this.props.form._addElement(this, { props: nProps });
-			console.log("TODO: Form element templates");
+			//console.log("TODO: Form element templates");
 
 		}
 		updateValueByEvent(event) {
@@ -1748,7 +1747,7 @@ export const ToggleSwitch = inject(["form"])(observer(
 
 // 			this.elmt = this.props.form._addElement(this, { props: nProps });
 
-// 			console.log("TODO: Form element templates");
+// 			//console.log("TODO: Form element templates");
 
 // 		}
 // 		updateValueByEvent(value) {
