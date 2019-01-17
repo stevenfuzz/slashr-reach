@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { NavLink, withRouter } from 'react-router-dom';
 import { Provider, observer, inject } from 'mobx-react';
 import { set as mobxSet, trace, decorate, observable, action, computed, intercept, observe, onReactionError, toJS } from "mobx";
+import { SlashrRouter, SlashrApp } from './SlashrRouter';
 // import { throws } from 'assert';
 // import { parse } from 'url';
 
@@ -37,13 +38,13 @@ export class Slashr {
 	};
 	static createApp(options) {
 		let slashr = Slashr.getInstance();
-		if(slashr.app) throw("Slashr Error: App already initialized.");
-		slashr.app = new SlashrApp(slashr,options);
+		if (slashr.app) throw ("Slashr Error: App already initialized.");
+		slashr.app = new SlashrApp(slashr, options);
 		return slashr.app;
 	};
 	// Connects commpontent as app observer
-	static connect(component){
-		
+	static connect(component) {
+
 		return inject("app")(observer(component));
 	}
 	// static get ui() {
@@ -57,22 +58,22 @@ export class Slashr {
 	static get instance() {
 		return Slashr.getInstance();
 	}
-	static get Controller(){
+	static get Controller() {
 		return SlashrController;
 	}
-	static get Domain(){
+	static get Domain() {
 		return SlashrDomain;
 	}
-	static listen(domain, props = {}){
+	static listen(domain, props = {}) {
 		decorate(domain, props);
 	}
 	// setConfig(config) {
 	// 	this._metadata.config = config;
 	// }
-	get app(){
+	get app() {
 		return this._metadata.app
 	}
-	set app(app){
+	set app(app) {
 		this._metadata.app = app;
 		return this;
 	}
@@ -84,726 +85,62 @@ decorate(Slashr, {
 	_metadata: observable
 });
 
-class SlashrRouter{
-	constructor(slashr, options = {}){
-		this._slashr = slashr;
-		this._portals = {};
-		this._history = null;
-		this._location = null;
-		this._prevLocation = null;
-		this._isInitialized = false;
-		this._activePortalName = "default";
-		
-		this._activeRouteName = null;
-		this._route = null;
-		
-		this._uiState = {};
-		this._uiStateKey = false;
 
-		this._state = {};
-		this._stateKey = {};
-	}
-	initialize(options){
-		if(! options.location) throw("Router error: No location."); 
-		if(! options.history) throw("Router error: No history."); 
-		//if(this._location) this._prevLocation = this._location;
-		this._location = options.location;
-		this._history = options.history;
-		this._uiState = (options.location.state && options.location.state._slashr) ? options.location.state._slashr : {};
-		this._activeRouteName = options.location.pathname;
-		//if(! this._uiState.key) this._uiStateKey = (this._state.key) ? this._state.key : new Date().getTime();
-		this._activePortalName = this._uiState.portal || "default";
-	}
-	create(name, props){
-		if(! this._portals[name]) this._portals[name] = new SlashrRouterPortal(this, name, props);
-		//this._routes[name].update(route, component);
-		return this._portals[name];
-	}
-	createAppInstance(routerPortalName){
-		return new SlashrRouterAppInstance(this._slashr, routerPortalName);
-	}
-	async load(routeData, routerPortalName, options={}){
-		// controllerName = Slashr.utils.str.capitalize(controllerName);
-		
-		// // const Controller = require(`../../controllers/${controllerName}Controller`);
-		let Controller = routeData.controller;
-		let actionName = routeData.action || "default";
-
-		let route = new SlashrRoute(this._slashr, routeData, routerPortalName, options);
-
-		// console.log("feed check controller",`../../controllers/${controllerName}Controller`,Controller);
-		// //console.log("feed look at this",Controller[`${controllerName}Controller`].prototype.defaultAction.toString());
-		let controller = new Controller(this.portal(routerPortalName));
-		//let controller = new Controller[`${controllerName}Controller`](this.props.domain);
-		let actionMethod = `${actionName}Action`;
-
-		if (!controller[actionMethod]) throw (`Controller Error: ${actionMethod} not found in controller ${controller.constructor.name}`);
-
-		this.handleLoading(route.portal);
-
-		route.component = await controller[actionMethod](route.data);
-
-		this.handleLoaded(route.portal);
-
-		this.update(route);
-
-		return route;
-
-	}
-	hasRoute(name){
-		if(! this._portals[name]) return false;
-		return this._portals[name].hasRoute;
-	}
-	update(route){
-		if(! this._portals[route.portal]) return false;
-		return this._portals[route.portal].update(route);
-	}
-	reset(name){
-		if(! this._portals[name]) return false;
-		this._portals[name].reset();
-	}
-	portalExists(name){
-		return this._portals[name] ? true : false;
-	}
-	portal(name){
-		if(! this._portals[name]) return false;
-		return this._portals[name];
-	}
-	handleLoading(name){
-		if(! this._portals[name]) return false;
-		return this._portals[name].handleLoading();
-	}
-	handleLoaded(name){
-		if(! this._portals[name]) return false;
-		return this._portals[name].handleLoaded();
-	}
-	get slashrState(){
-		return (this._location.state && this._location.state._slashr) ? this._location.state._slashr : {}; 
-	}
-	getUiState(name){
-		if(! this._portals[name]) return false;
-		return this._portals[name].getUiState();
-	}
-	updateUiState(name, state = {}){
-		if(! this._portals[name]) return false;
-		this._portals[name].updateUiState(state);
-
-		if(this._uiState && this._uiState && this._uiState.key){
-			// Get the state object
-			// let uiState = {
-			// 	_slashr: {}
-			// };
-			//let uiStateJson = sessionStorage.getItem('_slashrUiState') || false;
-
-			console.log("route state FOUND STATE!!!",this._uiState, uiStateJson);
-
-			if(uiStateJson) uiState = JSON.parse(uiStateJson) || {};
-			
-			uiState[this._uiState.key] = this._uiState;
-
-			console.log("route state UPDATE UI STATE!!!",uiState);
-			sessionStorage.setItem('_slashrUiState',JSON.stringify(uiState));
-		}
-		
-		return true;
-	}
-	// initializeUiState(name){
-		
-	// 	this._uiStateKey =  (this._location.state && this._location.state._slashr && this._location.state._slashr.key) ? this._location.state._slashr.key : new Date().getTime();;
-	// 	this._uiState = {};
-
-	// 	let state = this._location.state || {};
-	// 	if(this._location.state && this._loca)
-
-	// 	if(! this._location.state || ! this._location.state._slashr || ! this._location.state._slashr.key){
-	// 		console.log("route state initializeUiState",name,JSON.stringify(this.location.state));
-	// 		this.updateUiState(name);
-	// 		this.pushUiState();
-	// 	}
-	// 	else{
-	// 		this._uiStateKey = this._location.state._slashr.key;
-	// 		this._uiState = this._location.state;
-	// 	}
-	// }
-	pushUiState(){
-
-
-
-		//let uiState = false;
-
-		// Get it from the session
-		// let uiStateJson = sessionStorage.getItem('_slashrUiState');
-
-		// // console.log("route state pushUiState",this._uiState, uiStateJson);
-
-		// if(uiStateJson){
-		// 	// Remove the item
-		// 	sessionStorage.removeItem('_slashrUiState');
-		// 	let sessionUiState = JSON.parse(uiStateJson);
-		// 	if(sessionUiState) uiState = sessionUiState;
-		// }
-
-		// if(! uiState) return false;
-		
-		// console.log("route state pushing ui state...",uiState);
-
-		// this._slashr.router.history.replace({
-		// 	pathname: this._location.pathname,
-		// 	state: uiState,
-		// 	search: this._location.search || ""
-		// });
-	}
-	createState(options = {}){
-		let routerState = {
-			portals: {}
-		};
-		
-		let state = options.state || {};
-		
-		routerState.portal = options.portal || "default";
-
-		for(let portal in this._portals){
-			if(! this._portals[portal].location) continue;
-			routerState.portals[portal] = this._portals[portal].createState(options);
-		}
-		
-		state._slashr = {
-			key: options.key || new Date().getTime(),
-			router: routerState
-		}
-		return state;
-	}
-	parseLinkProps(props) {
-		let routeProps = {
-			route: props.route || null,
-			portal: props.portal || "default"
-		};
-		if (!props.to) throw ("Route Link Error: No to.");
-		if (typeof props.to === 'object') {
-			if (props.to.pathname) routeProps.route = props.to.pathname;
-			else if (props.to.route) routeProps.route = props.to.route;
-			if (props.to.portal) {
-				routeProps.portal = props.to.portal;
-			}
-		}
-		else routeProps.route = props.to;
-		if (!routeProps.route) throw ("Route Link Error: No pathname.");
-		return routeProps;
-	}
-	get default(){
-		return this.instance("default");
-	}
-	get history(){
-		return this._history;
-	}
-	get location(){
-		return this._location;
-	}
-	get portals(){
-		return this._portals;
-	}
-	set activePortalName(activePortalName){
-		this._activePortalName = activePortalName;
-		return this;
-	}
-	get activePortalName(){
-		return this._activePortalName;
-	}
-	get activePortal(){
-		return this.portals[this.activePortalName];
-	}
-	get activeRouteName(){
-		return this._activeRouteName;
-	}
-	get route(){
-		return this.portals[this.activePortalName].route;
-	}
-}
-
-class SlashrRoute{
-	constructor(slashr,routeData,routerPortalName, options = {}){
-		this._slashr = slashr;
-		this._metadata = {
-			route: routeData,
-			portal: routerPortalName,
-			path: options.location.pathname,
-			data: {
-				params: (options.match) ? options.match.params : {},
-				query: {}
-			},
-			// params: (options.match) ? options.match.params : {},
-			// query: {},
-			location: options.location || {},
-			component: null
-		}
-		if(options.location && options.location.search){
-			let searchParams = new URLSearchParams(options.location.search.substring(1));
-			for (let key of searchParams.keys()) {
-				this._metadata.data.query[key] = searchParams.get(key);
-			}
-		}
-	}
-	get data(){
-		return this._metadata.data;
-	}
-	get component(){
-		return this._metadata.component;
-	}
-	set component(component){
-		this._metadata.component = component;
-		return this;
-	}
-	get location(){
-		return this._metadata.location;
-	}
-	get portal(){
-		return this._metadata.portal;
-	}
-	get params(){
-		return this._metadata.data.params;
-	}
-	get query(){
-		return this._metadata.data.query;
-	}
-	get qry(){
-		return this.query;
-	}
-	get data(){
-		return {...this.query,...this.params};
-	}
-	get dt(){
-		return this.data;
-	}
-	get path(){
-		return this.path;
-	}
-	get name(){
-		return this._metadata.route.name || null;
-	}
-}
-
-class SlashrRouterPortal{
-	_uid = null;
-	_component = null;
-	_location = null;
-	_ui = {};
-	_hasLoaded = false;
-	constructor(router, name, props){
-		this._name = name;
-		this._router = router;
-		this._route = null;
-		this._onLoading = props.onLoading || null;
-		this._onLoaded = props.onLoaded || null;
-		this._location = this.parseLocation();
-		this._isModal = props.modal ? true : false;
-	}
-	parseLocation(){
-		let ret = null;
-		let location = this._router.location;
-		let useDefault = this._name === "default";
-
-		let routerState = this._router.slashrState.router;
-
-		console.log("Parse Router State",routerState);
-
-		if(routerState && routerState.portals && routerState.portals[this._name]){
-			if(routerState.portal !== this._name){
-				useDefault = false;
-				let locState = routerState.portals[this._name];
-				ret = {
-					pathname: locState.pathname,
-					search: locState.search,
-					key: locState.key
-				};
-				// for(let name in location.state.portals){
-				// 	if(name === this._name){
-						
-				// 	}
-				// }
-			}
-			else useDefault = true;
-		}
-		if(! ret && useDefault){
-			ret = {
-				pathname: location.pathname,
-				// state: location.state,
-				search: location.search
-			};
-			if(location.state){
-				//alert("filter state");
-				ret.state = location.state;
-			}
-			if(location.search) ret.search = location.search;
-
-		}
-
-		return ret;
-	}
-	reset(){
-		this._component = null;
-		this._location = null;
-		this._ui = {};
-		this._hasLoaded = false;
-		this._uid = null;
-	}
-	update(route){
-		this._route = route;
-		this._component = route.component;
-		this._location = null;
-		//this._routerName = (props.location.state && props.location.state.router) || "default";
-		this._ui = {};
-		this._hasLoaded = true;
-
-		if(route.location){
-			let routerState = (route.location.state && route.location.state._slashr) ? route.location.state._slashr.router : {};
-
-			if(routerState.portals){
-				for(let name in routerState.portals){
-					if(name === this._name){
-						this._location = {
-							pathname: routerState.portals[name].pathname
-						};
-						if(routerState.portals[name].key){
-							this._key = routerState.portals[name].key;
-						}
-						if(routerState.portals[name].ui){
-							this._ui = routerState.portals[name].ui;
-						}
-					}
-				}
-			}
-
-			if(! this._location){
-				this._location = {
-					pathname: route.location.pathname,
-					// state: props.location.state,
-					search: route.location.search
-				};
-				if(route.location.state){
-					//alert("filter state");
-					//this._location.state = props.location.state;
-				}
-				if(route.location.search) this._location.search = route.location.search;
-			}
-		}
-
-		let uid = (this._location) ? this._location.pathname + this._location.search : null;
-		if(uid !== this._uid){
-			this._uid = uid;
-		}
-		console.log("create location",JSON.stringify(this._location));
-	}
-	updateUiState(state){
-		for(let key in state){
-			this._ui[key] = state[key];
-		}
-		return this._ui;
-	}
-	getUiState(){
-		return this._ui;
-	}
-	createState(options){
-		let state = {
-			pathname: this._location.pathname,
-			search: this._location.search
-		}
-		state.ui = this._ui;
-
-		if(this._location.state) throw("finish");
-
-		return state;
-	}
-	handleLoading(){
-		if(this._onLoading) this._onLoading();
-	}
-	handleLoaded(){
-		if(this._onLoaded) this._onLoaded();
-	}
-	get component(){
-		if(! this._uid) return null;
-		return this._component;
-	}
-	get hasRoute(){
-		if(! this._uid) return false;
-		return (this._location) ? true : false;
-	}
-	get location(){
-		return this._location;
-	}
-	get state(){
-		
-	}
-	get name(){
-		return this._name;
-	}
-	get uid(){
-		return this._uid;
-	}
-	get ui(){
-		return this._ui;
-	}
-	get hasLoaded(){
-		return this._hasLoaded;
-	}
-	get pathname(){
-		return this._location ? this._location.pathname : null;
-	}
-	get search(){
-		return this._location ? this._location.search : "";
-	}
-	get isInitialized(){
-		return this._uid ? true : false;
-	}
-	get route(){
-		return this._route;
-	}
-}
-decorate(SlashrRouterPortal, {
-	// component: computed,
-	_uid: observable
-});
-
-
-// let appRoute = new SlashrAppRoute(route,{
-// 	portal: routerPortalName,
-// 	location: this.props.location,
-// 	match: match,
-// 	component: null
-// });
-
-class SlashrAppRouter{
-	constructor(slashr, options = {}){
-		this._slashr = slashr;
-		// this._metadata = {
-		// 	scrollBehavior: options.scrollBehavior
-		// }
-	}
-	get metadata(){
-		return this._metadata;
-	}
-	
-	// can also be route, options
-	_createState(route, options){
-
-	}
-	_updateRoute(type, route, options = {}){
-		let portal = "default";
-
-		if(typeof route === "object"){
-			options = route;
-			route = null;
-			if(options.route) route = options.route;
-		}
-		else if(! route){
-			route = router;
-			router = null;
-		}
-		if(options.portal) portal = options.portal;
-		if(! route) throw("Router Push Error: No Route.");
-
-		options.portal = portal;
-		options.route = route;
-
-		let state = this._slashr.router.createState(options);
-
-		// Check if the next portal is modal
-		// If not, remove any modal portals
-		// console.log("ROUTER HISTORY STATA",portal, JSON.stringify(state._slashr.router.portals),state,route,this._slashr.router.location.pathname);
-		// for(let currportal in state._slashr.router.portals){
-		// 	console.log("curr portal test...", currportal);
-		// }
-
-		// If changing routes for the new route, remove from state
-
-		let currRoute = this._slashr.router.location.pathname + (this._slashr.router.location.search || "");
-
-		if(currRoute !== route && state._slashr.router.portals[portal]){
-			delete state._slashr.router.portals[portal];
-		}
-
-		// Check if new route should close modal layers
-
-		
-		// if(Object.keys(portals).length) routerState.portals = portals;
-
-		// let historyState = {
-		// 	_slashr: {
-		// 		router: routerState
-		// 	}
-		// };
-		
-		// console.log("router push to histoiry?",portal,state,this._slashr.router.location.pathname,this._slashr.router.location.state,route,historyState);
-
-		switch(type){
-			case "push":
-				this._slashr.router.history.push(route, state);
-				break;
-			case "replace":
-				this._slashr.router.history.replace(route, state);
-				break;
-		}
-	}
-	back(options){
-		this._slashr.router.pushUiState();
-		this._slashr.router.history.goBack();
-	}
-	push(route, options){
-		this._slashr.router.pushUiState();
-		this._updateRoute("push",route,options);
-	}
-	replace(route, options){
-		this._updateRoute("replace",route,options);
-	}
-	
-	get location(){
-		return this._slashr.router.location;
-	}
-	get history(){
-		return this._slashr.router.history;
-	}
-	get route(){
-		return this._slashr.router.route;
-	}
-}
-class SlashrRouterAppInstance{
-	constructor(slashr, routerPortalName){
-		return new Proxy(this, {
-			get : function(obj, prop){
-				
-				switch(prop){
-					case "route":
-					case "rt":
-						return slashr.router.portals[routerPortalName].route;
-						break;
-					default:
-						return slashr.app[prop];
-					}
-				}
-		});	
-	}	
-}
-class SlashrApp{
-	constructor(slashr, options){
-		if(! options.config) throw("Slashr Error: No Config.");
-		if(! options.routes) throw("Slashr Error: No Routes.");
-		//console.log("TODO: Put routes in router?");
-		this._metadata = {
-			model: new SlashrAppModel(options),
-			router: new SlashrAppRouter(slashr, options),
-			config: options.config,
-			routes: options.routes,
-			defaultLayout: options.defaultLayout || null,
-			utilities: slashr.utils,
-			scrollBehavior: options.scrollBehavior || null
-		}
-	}
-	get router(){
-		return this._metadata.router;
-	}
-	get rtr(){
-		return this._metadata.router;
-	}
-	get model(){
-		return this._metadata.model;
-	}
-	get mdl(){
-		return this.model;
-	}
-	get routes(){
-		return this._metadata.routes;
-	}
-	get utilities(){
-		return this._metadata.utilities;
-	}
-	get utils(){
-		return this._metadata.utilities;
-	}
-	get defaultLayout(){
-		return this._metadata.defaultLayout;
-	}
-	get config(){
-		return this._metadata.config;
-	}
-	get scrollBehavior(){
-		return this._metadata.scrollBehavior;
-	}
-}
-
-class SlashrAppModel{
-	constructor(options){
-		if(! options.domain) throw("Slashr Error: No Domain.");
-		if(! options.ui) throw("Slashr Error: No Ui.");
-		this._metadata = {
-			domain: options.domain,
-			ui: options.ui
-		}
-	}
-	get domain(){
-		return this._metadata.domain;
-	}
-	get dm(){
-		return this.domain;
-	}
-	get ui(){
-		return this._metadata.ui;
-	}
-}
-
-class SlashrController{
-	constructor(routerPortal, domain){
+class SlashrController {
+	constructor(routerPortal, domain) {
 		this.result = this.rslt = new SlashrControllerActionResultFactory();
 		this._routerPortal = routerPortal;
 		// this._slashr = Slashr.getInstance();
 	}
-	get model(){
+	get model() {
 		return Slashr.getInstance().app.mdl;
 	}
-	get mdl(){
+	get mdl() {
 		return this.model;
 	}
-	get route(){
+	get route() {
 		return {
 			portal: this._routerPortal.name
 		};
 	}
-	get rt(){
+	get rt() {
 		return this.route;
 	}
 }
-class SlashrDomain{
-	constructor(){
-		
+class SlashrDomain {
+	constructor() {
+
 	}
-	get model(){
+	get model() {
 		return Slashr.getInstance().app.mdl;
 	}
-	get mdl(){
+	get mdl() {
 		return this.model;
 	}
-	get utilities(){
+	get utilities() {
 		return Slashr.getInstance().app.utils;
 	}
-	get utils(){
+	get utils() {
 		return this.utilities;
 	}
-	setState(values){
+	setState(values) {
 		mobxSet(this, values);
 	}
 }
 
-class SlashrControllerActionResultFactory{
-	component(component){
+class SlashrControllerActionResultFactory {
+	component(component) {
 		return new SlashrControllerActionComponentResult(component);
 	}
 }
-class SlashrControllerActionComponentResult{
-	constructor(component){
+class SlashrControllerActionComponentResult {
+	constructor(component) {
 		this._metadata = {
 			component: component
 		};
 		this.props = {};
 	}
-	render(){
+	render() {
 		let Component = this._metadata.component;
 		return React.cloneElement(<Component />, this.props);
 	}
@@ -830,6 +167,7 @@ class SlashrUi {
 		this._handleWindowScroll = this._handleWindowScroll.bind(this);
 		this._handleObserveIntersection = this._handleObserveIntersection.bind(this);
 		this._intersectionObserver = null;
+		this._handleObserveResize = this._handleObserveResize.bind(this);
 	}
 	get animationQueue() {
 		if (!this._metadata.animationQueue) this._metadata.animationQueue = new SlashrAnimationQueue();
@@ -983,6 +321,18 @@ class SlashrUi {
 			}
 		});
 	}
+	_handleObserveResize(entries) {
+		window.requestAnimationFrame(() => {
+			for (let ent of entries) {
+				for (let elmtIdx in this._events.observeResize) {
+					if (this._metadata.elmts[elmtIdx].ref.current == ent.target) {
+						this._events.observeResize[elmtIdx](ent);
+						break;
+					}
+				}
+			}
+		});
+	}
 
 	addEventListener(event, elmt, callback) {
 		//"TODO: Refactor?
@@ -1011,6 +361,17 @@ class SlashrUi {
 				}
 				this._events.observeIntersection[elmt.idx] = callback;
 				this._intersectionObserver.observe(elmt.ref.current);
+				break;
+			case "observeResize":
+				if (!this._events.observeResize) {
+					// Require the polyfill before requiring any other modules.
+					require('resize-observer-polyfill');
+					this._events.observeResize = {};
+					this._resizeObserver = new ResizeObserver(this._handleObserveResize);
+
+				}
+				this._events.observeResize[elmt.idx] = callback;
+				this._resizeObserver.observe(elmt.ref.current);
 				break;
 		}
 	}
@@ -1047,6 +408,17 @@ class SlashrUi {
 					if (this._events.observeIntersection) delete this._events.observeIntersection;
 					this._intersectionObserver.disconnect();
 					delete this._intersectionObserver;
+				}
+				break;
+			case "observeResize":
+				if (elmt && this._events.observeResize[elmt.idx]) {
+					delete this._events.observeResize[elmt.idx];
+					this._resizeObserver.unobserve(elmt.ref.current);
+				}
+				if (!this._events.observeResize || !Object.keys(this._events.observeResize).length) {
+					if (this._events.observeResize) delete this._events.observeResize;
+					this._resizeObserver.disconnect();
+					delete this._resizeObserver;
 				}
 				break;
 		}
@@ -1157,6 +529,7 @@ class SlashrUiElement {
 		this._handleWindowScroll = this._handleWindowScroll.bind(this);
 		this._handleClickOut = this._handleClickOut.bind(this);
 		this._handleObserveIntersection = this._handleObserveIntersection.bind(this);
+		this._handleObserveResize = this._handleObserveResize.bind(this);
 		this._handleTransitionEnter = this._handleTransitionEnter.bind(this);
 		this.init(props);
 
@@ -1187,7 +560,8 @@ class SlashrUiElement {
 			scroll: null,
 			animate: null,
 			onClickOut: null,
-			onObserveIntersection: null
+			onObserveIntersection: null,
+			onObserveResize: null
 		}
 	}
 	static get defaultStateVars() {
@@ -1264,7 +638,7 @@ class SlashrUiElement {
 				}
 			}
 		}
-		
+
 		return (hasUpdate) ? updatedProps : false;
 	}
 	init(props) {
@@ -1451,6 +825,10 @@ class SlashrUiElement {
 		if (!this._eventListeners.onObserveIntersection && this._stateProps.onObserveIntersection) {
 			this._metadata.ui.addEventListener("observeIntersection", this, this._handleObserveIntersection);
 			this._eventListeners.onObserveIntersection = this._handleObserveIntersection;
+		}
+		if (!this._eventListeners.onObserveResize && this._stateProps.onObserveResize) {
+			this._metadata.ui.addEventListener("observeResize", this, this._handleObserveResize);
+			this._eventListeners.onObserveResize = this._handleObserveResize;
 		}
 		if (props.onClickOut) {
 			if (!this._metadata.state.clickOut) this._metadata.state.clickOut = {
@@ -1860,6 +1238,9 @@ class SlashrUiElement {
 	_handleObserveIntersection(entry) {
 		if (this._stateProps.onObserveIntersection) this._stateProps.onObserveIntersection(entry);
 	}
+	_handleObserveResize(entry) {
+		if (this._stateProps.onObserveResize) this._stateProps.onObserveResize(entry);
+	}
 
 	// Event Listener Updates
 	_addEmulateTouchEventListeners() {
@@ -1912,6 +1293,7 @@ class SlashrUiElement {
 		if (this.props.onClickOut) this._removeClickOutEventListeners();
 		if (this._eventListeners.onWindowResize) this._removeWindowResizeEventListener();
 		if (this._eventListeners.onObserveIntersection) this._removeObserveIntersectionListener();
+		if (this._eventListeners.onObserveResize) this._removeObserveResizeListener();
 		if (this._eventListeners.onWindowScroll) this._removeWindowScrollEventListener();
 	}
 	_removeWindowResizeEventListener() {
@@ -1925,6 +1307,10 @@ class SlashrUiElement {
 	_removeObserveIntersectionListener() {
 		this._metadata.ui.removeEventListener("observeIntersection", this);
 		if (this._eventListeners.onObserveIntersection) delete this._eventListeners.onObserveIntersection;
+	}
+	_removeObserveResizeListener() {
+		this._metadata.ui.removeEventListener("observeResize", this);
+		if (this._eventListeners.onObserveResize) delete this._eventListeners.onObserveResize;
 	}
 	_handleTransitionEnter() {
 
@@ -1978,10 +1364,10 @@ export const _Element = inject("slashr")(observer(
 		componentDidMount() {
 			if (this.elmt && this.elmt.shouldRender) {
 				this.elmt.handleMount(this.props);
-				this.updateRender();	
+				this.updateRender();
 			}
 		}
-		updateRender(){
+		updateRender() {
 			if (this.elmt && this.elmt.shouldRender) {
 				if (!this._metadata.hasRendered && this._metadata.isRendered) {
 					if (this.props.scrollToTop) setTimeout(() => {
@@ -1989,7 +1375,7 @@ export const _Element = inject("slashr")(observer(
 					}, 100);
 					this._metadata.hasRendered = true;
 				}
-				if(this._metadata.isRendered && this.props.scrollTop && !isNaN(this.props.scrollTop)){
+				if (this._metadata.isRendered && this.props.scrollTop && !isNaN(this.props.scrollTop)) {
 					Slashr.utils.dom.scrollTop(this.props.scrollTop);
 				}
 			}
@@ -2261,20 +1647,20 @@ export const Header = React.forwardRef((props, ref) => (
 
 
 export class ContainerLink extends React.Component {
-	constructor(props){
+	constructor(props) {
 		super(props);
 		this.slashr = Slashr.getInstance();
 		this.handleClick = this.handleClick.bind(this);
 		this.routeProps = this.slashr.router.parseLinkProps(this.props);
-		if(! this.props.to) throw("ContainerLink error: 'to' prop missing");
+		if (!this.props.to) throw ("ContainerLink error: 'to' prop missing");
 	}
-	handleClick(e){
-		if(e.target.tagName !== "A"){
+	handleClick(e) {
+		if (e.target.tagName !== "A") {
 			this.slashr.app.router.push(this.routeProps);
 		}
 	}
-	render(){
-		return(
+	render() {
+		return (
 			<div className={this.props.className} onClick={this.handleClick}>
 				{this.props.children}
 			</div>
@@ -2283,27 +1669,27 @@ export class ContainerLink extends React.Component {
 };
 
 export class SocialText extends React.Component {
-	constructor(props){
+	constructor(props) {
 		super(props);
-		if(! this.props.tagRenderer) throw("Social Text Error: tagRenderer required.");
+		if (!this.props.tagRenderer) throw ("Social Text Error: tagRenderer required.");
 	}
-	renderText(){
+	renderText() {
 		const reactStringReplace = require('react-string-replace');
 		let text = this.props.value;
-		if(! text) return text;
-		if(text.indexOf("@[") === -1) return text;
+		if (!text) return text;
+		if (text.indexOf("@[") === -1) return text;
 		let regex = /@\[([a-z\d_]+):([a-z\d_ ]+):([a-z\d_-]+)\]/ig;
 		// text = reactStringReplace(text, regex, (match, i) => {
 		// 	console.log("mention",match,i);
 		// });
 		let tags = text.match(regex);
-		if(! tags || ! tags.length) return text;
+		if (!tags || !tags.length) return text;
 		let mentions = [];
-		if(tags && tags.length){
-			tags.forEach((val)=>{
+		if (tags && tags.length) {
+			tags.forEach((val) => {
 				let idx = 0;
 				let tagInfo = val.match(/@\[([a-z\d_]+):([a-z\d_ ]+):([a-z\d_-]+)\]/i);
-				if(tagInfo.length < 4) return;
+				if (tagInfo.length < 4) return;
 				let tag = {
 					match: tagInfo[0],
 					type: tagInfo[1],
@@ -2318,7 +1704,7 @@ export class SocialText extends React.Component {
 		}
 		return text;
 	}
-	render(){
+	render() {
 		return this.renderText();
 	}
 }
@@ -2361,14 +1747,14 @@ export const _Menu = inject("slashr")(observer(
 		constructor(props) {
 			super(props);
 
-			if(! this.props.control) throw("Menu Error: No control given.");
+			if (!this.props.control) throw ("Menu Error: No control given.");
 
 			// this.handleClose = this.handleClose.bind(this);
 			this.handleOpenClick = this.handleOpenClick.bind(this);
 			this.handleCloseClick = this.handleCloseClick.bind(this);
 			this.mnu = this.props.slashr.ui.createMenu(props);
 			this.hasOpened = false;
-			
+
 			// this.menuProps = {
 			// 	...props,
 			// 	onClickOut: this.handleClose,
@@ -2376,20 +1762,20 @@ export const _Menu = inject("slashr")(observer(
 			// };
 		}
 		handleCloseClick() {
-			if(! this.close()) return;
+			if (!this.close()) return;
 			// e.preventDefault();
 			// e.stopPropagation();
 		}
-		handleOpenClick(){
+		handleOpenClick() {
 			this.open();
 		}
-		open(){
-			console.log("menu",this.mnu);
+		open() {
+			console.log("menu", this.mnu);
 			this.mnu.open = true;
 			return true;
 		}
-		close(){
-			if(this.props.shouldClose && this.props.shouldClose() === false){
+		close() {
+			if (this.props.shouldClose && this.props.shouldClose() === false) {
 				return false;
 			}
 			this.mnu.open = false;
@@ -2411,27 +1797,27 @@ export const _Menu = inject("slashr")(observer(
 			if (this.props.onClose) this.props.onClose(this.mnu);
 		}
 		render() {
-			
+
 			let classNames = ["menu-cntr"];
 			if (this.props.className) classNames.push(this.props.className);
 			let control = React.cloneElement(this.props.control, {
 				onClick: this.handleOpenClick
 			});
 			let menuProps = {};
-			if(this.props.transition){
+			if (this.props.transition) {
 				menuProps.transition = this.props.transition;
 				menuProps.transitionToggle = this.mnu.isOpen;
 			}
-			else{
+			else {
 				menuProps.fadeToggle = this.mnu.isOpen;
 			}
 			//console.log("menu render",menuProps);
 			return (
 				<div className={classNames.join(" ")}>
 					<div className="menu-control">
- 						{control}
- 					</div>
- 					<Container
+						{control}
+					</div>
+					<Container
 						hide
 						unmountOnHide
 						className="menu"
@@ -2440,8 +1826,8 @@ export const _Menu = inject("slashr")(observer(
 						ref={this.props.forwardRef}
 						{...menuProps}
 					>
- 						{this.props.children}
- 					</Container>
+						{this.props.children}
+					</Container>
 				</div>
 			);
 		}
@@ -2453,8 +1839,8 @@ export class MenuItem extends React.Component {
 	constructor(props) {
 		super(props);
 	}
-	render(){
-		return(
+	render() {
+		return (
 			<div className="menu-item">
 				{this.props.children}
 			</div>
@@ -2493,18 +1879,18 @@ export const _Dialog = inject("slashr")(observer(
 			};
 
 			let backdropClassNames = ["dialog-backdrop"];
-			if(this.props.backdropClassName) backdropClassNames.push(this.props.backdropClassName);
+			if (this.props.backdropClassName) backdropClassNames.push(this.props.backdropClassName);
 			this.dialogBackdropProps = {
 				classNames: backdropClassNames
 			};
 		}
 		handleClose(e) {
-			if(! this.close()) return;
+			if (!this.close()) return;
 			e.preventDefault();
 			e.stopPropagation();
 		}
-		close(){
-			if(this.props.shouldClose && this.props.shouldClose() === false){
+		close() {
+			if (this.props.shouldClose && this.props.shouldClose() === false) {
 				return false;
 			}
 			this.dlg.open = false;
@@ -2512,8 +1898,8 @@ export const _Dialog = inject("slashr")(observer(
 		}
 		componentDidUpdate(prevProps, prevState, snapshot) {
 			if (this.props.open !== prevProps.open) this.dlg.open = this.props.open;
-			if (this.dlg.open){
-				if(! this.hasOpened){
+			if (this.dlg.open) {
+				if (!this.hasOpened) {
 					this.hasOpened = true;
 					this.onOpen();
 				}
@@ -2539,7 +1925,7 @@ export const _Dialog = inject("slashr")(observer(
 		}
 		render() {
 			let closeButton = null;
-			if(this.closeButton){
+			if (this.closeButton) {
 				closeButton = React.cloneElement(this.closeButton, {
 					onClick: this.handleClose
 				});
@@ -2558,7 +1944,7 @@ export const _Dialog = inject("slashr")(observer(
 						>
 							{closeButton}
 						</Container>
-						
+
 						<Container
 							{...this.dialogProps}
 							ref={this.props.forwardRef}
@@ -2588,19 +1974,19 @@ export class HeadTags extends React.Component {
 	constructor(props) {
 		super(props);
 	}
-	renderTags(){
+	renderTags() {
 		let tags = [];
-		if(! this.props.tags) return false;
-		if(this.props.tags.title) tags.push(<title key="title">{this.props.tags.title}</title>);
-		if(this.props.tags.meta){
-			if(this.props.tags.meta.type) tags.push(<meta key="og:type" property="og:type" content={this.props.tags.meta.type} />);
-			if(this.props.tags.meta.url) tags.push(<meta key="og:url" property="og:url" content={this.props.tags.meta.url} />);
-			if(this.props.tags.meta.siteName) tags.push(<meta key="og:site_name" property="og:site_name" content={this.props.tags.meta.siteName} />);
-			if(this.props.tags.meta.title) tags.push(<meta key="og:title" property="og:title" content={this.props.tags.meta.title} />);
-			if(this.props.tags.meta.description) tags.push(<meta key="og:description" property="og:description" content={this.props.tags.meta.description} />);
-			if(this.props.tags.meta.image) tags.push(<meta key="og:image" property="og:image" content={this.props.tags.meta.image} />);
-			if(this.props.tags.meta.facebookAppId) tags.push(<meta key="fb:app_id" property="fb:app_id" content={this.props.tags.meta.facebookAppId} />);
-			if(this.props.tags.meta.twitterCard) tags.push(<meta key="twitter:card" property="twitter:card" content={this.props.tags.meta.twitterCard} />);
+		if (!this.props.tags) return false;
+		if (this.props.tags.title) tags.push(<title key="title">{this.props.tags.title}</title>);
+		if (this.props.tags.meta) {
+			if (this.props.tags.meta.type) tags.push(<meta key="og:type" property="og:type" content={this.props.tags.meta.type} />);
+			if (this.props.tags.meta.url) tags.push(<meta key="og:url" property="og:url" content={this.props.tags.meta.url} />);
+			if (this.props.tags.meta.siteName) tags.push(<meta key="og:site_name" property="og:site_name" content={this.props.tags.meta.siteName} />);
+			if (this.props.tags.meta.title) tags.push(<meta key="og:title" property="og:title" content={this.props.tags.meta.title} />);
+			if (this.props.tags.meta.description) tags.push(<meta key="og:description" property="og:description" content={this.props.tags.meta.description} />);
+			if (this.props.tags.meta.image) tags.push(<meta key="og:image" property="og:image" content={this.props.tags.meta.image} />);
+			if (this.props.tags.meta.facebookAppId) tags.push(<meta key="fb:app_id" property="fb:app_id" content={this.props.tags.meta.facebookAppId} />);
+			if (this.props.tags.meta.twitterCard) tags.push(<meta key="twitter:card" property="twitter:card" content={this.props.tags.meta.twitterCard} />);
 
 		}
 		return tags;
@@ -2666,8 +2052,8 @@ export class SlashrUiCalendar {
 		startDay.setDate(1);
 
 		let endDay = new Date(startDay);
-		endDay.setHours(23,59,59,999);
-		endDay.setDate(endDay.getDate()+41);
+		endDay.setHours(23, 59, 59, 999);
+		endDay.setDate(endDay.getDate() + 41);
 
 		// Figure out the first sunday
 		if (startDay.getDay() > 0) {
@@ -2749,7 +2135,7 @@ export const _Calendar = inject("slashr")(observer(
 
 			//this._previousMonthButton = this.props.previousMonthButton || ((this.props.previousMonthButton === false) ? null : <button>{"<"}</button>);
 			//this._nextMonthButton = this.props.nextMonthButton || ((this.props.nextMonthButton === false) ? null : <button>{">"}</button>);
-		
+
 
 			this._topRightActionButton = this.props.topRightActionButton || null;
 			this._onSelectDay = this.props.onSelectDay || null;
@@ -2765,7 +2151,7 @@ export const _Calendar = inject("slashr")(observer(
 			this.calendar.load();
 		}
 		componentWillReact() {
-			
+
 		}
 		componentWillUnmount() {
 			this.calendar.delete();
@@ -2872,10 +2258,10 @@ export const _Calendar = inject("slashr")(observer(
 		render() {
 			let classNames = ["calendar"];
 			if (this.props.className) classNames.push(this.props.className);
-			let nextMonthButton = (! this._nextMonthButton) ? null : React.cloneElement(this._nextMonthButton, {
+			let nextMonthButton = (!this._nextMonthButton) ? null : React.cloneElement(this._nextMonthButton, {
 				onClick: this.handleNextMonthButtonClick
 			});
-			let previousMonthButton = (! this._nextMonthButton) ? null : React.cloneElement(this._previousMonthButton, {
+			let previousMonthButton = (!this._nextMonthButton) ? null : React.cloneElement(this._previousMonthButton, {
 				onClick: this.handlePreviousMonthButtonClick
 			});
 			return (
@@ -2917,7 +2303,7 @@ export const _Calendar = inject("slashr")(observer(
 
 export class SlashrUiGrid {
 	constructor(slashrUi, idx, props) {
-		
+
 		this._metadata = {
 			ui: slashrUi,
 			idx: idx,
@@ -2931,7 +2317,7 @@ export class SlashrUiGrid {
 			ref: props.forwardRef || React.createRef(),
 			eventHandlers: {}
 		};
-		
+
 		this.initialize(props);
 	}
 	initialize(props, reset = false) {
@@ -2949,8 +2335,8 @@ export class SlashrUiGrid {
 		// this._metadata.lastPage = 0;
 		this._metadata.isLoadingNext = false;
 		this._metadata.scrollOffsetTop = props.scrollOffsetTop || 0;
-		this._metadata.noResults = 	props.noResults || null,
-		this._metadata.disabled = props.disabled || false;
+		this._metadata.noResults = props.noResults || null,
+			this._metadata.disabled = props.disabled || false;
 		// this._metadata.initialPage = props.page || 1;
 		this._resultsPerPage = props.resultsPerPage || null;
 		this._pagesPerSection = props.pagesPerSection || 1;
@@ -2971,19 +2357,19 @@ export class SlashrUiGrid {
 		this._metadata.initialPage = props.page || 1;
 		this._metadata.history = null;
 		this._metadata.initialScrollY = 0;
-		if(this._router.history && this._route && this._route.ui && this._route.ui.grid && this._route.ui.grid.grids[this.name]){
-			
-			switch(this._router.history.action){
+		if (this._router.history && this._route && this._route.ui && this._route.ui.grid && this._route.ui.grid.grids[this.name]) {
+
+			switch (this._router.history.action) {
 				case "POP":
 					let historyState = this._route.ui.grid;
 					this._metadata.history = historyState.grids[this.name];
 					this._metadata.initialPage = historyState.grids[this.name].page;
 					this._metadata.initialScrollY = (historyState.scrollY || 0);
-				break;
+					break;
 			}
 		}
 		//alert("LSKDJF");
-		
+
 		// if (props.history && props.location && props.location.state && props.location.state._slashr){
 		// 	let historyAction = props.history.action;
 		// 	switch (historyAction) {
@@ -3028,22 +2414,22 @@ export class SlashrUiGrid {
 
 	}
 	updateHistory() {
-		if(! this._route) return;
+		if (!this._route) return;
 		// Make sure the update is on the correct route.
-		if(this._slashr.router.route.portal !== this._route.name) return;
+		if (this._slashr.router.route.portal !== this._route.name) return;
 
 		let lastVisiblePage = 0;
-		for(let page in this._metadata.visiblePages){
-			if(page > lastVisiblePage) lastVisiblePage = parseInt(page);
+		for (let page in this._metadata.visiblePages) {
+			if (page > lastVisiblePage) lastVisiblePage = parseInt(page);
 		}
 
 		let section = null;
 		let page = null;
-		if(lastVisiblePage){
+		if (lastVisiblePage) {
 			let sectionNum = this.getSectionByPage(lastVisiblePage);
 			section = this.sections[sectionNum];
 		}
-		else{
+		else {
 			return;
 			// console.log(this._metadata.visiblePages);
 			// throw("NO VISIBLE PAGE ?????");
@@ -3051,16 +2437,16 @@ export class SlashrUiGrid {
 
 		// let section = this.props.grid.sections[this.props.section];
 		// let routeState = this._route.location.state || {};	
-		let uiState =this._slashr.router.getUiState(this._route.name);
+		let uiState = this._slashr.router.getUiState(this._route.name);
 
 		let gridState = uiState.grid || {};
 
-		if(! gridState.grids) gridState.grids = {};
+		if (!gridState.grids) gridState.grids = {};
 
 
 		let scrollY = window.scrollY;
 		// // Check if already in history
-		if (! gridState.grids[this.name] || gridState.grids[this.name].page !== lastVisiblePage){
+		if (!gridState.grids[this.name] || gridState.grids[this.name].page !== lastVisiblePage) {
 			gridState.grids[this.name] = {};
 			gridState.grids[this.name].section = section.num;
 			gridState.grids[this.name].page = lastVisiblePage;
@@ -3070,20 +2456,20 @@ export class SlashrUiGrid {
 				height: section.ref.current.offsetHeight,
 				width: section.ref.current.offsetWidth
 			};
-	
+
 			// // console.log();
 			if (section.num > 1) {
 				gridState.grids[this.name].offset = Slashr.utils.dom.offset(section.ref.current);
 			};
 		}
-		else{
+		else {
 			// Just update scroll??
-			if(gridState.scrollY && gridState.scrollY === scrollY){
+			if (gridState.scrollY && gridState.scrollY === scrollY) {
 				return false;
 			}
 		}
 		gridState.scrollY = scrollY;
-		
+
 		// console.log("grid handle intersect state", this.props.section, section.ref.current, gridState[this.name]);
 		//state._slashrUiGrid = gridState;
 
@@ -3094,7 +2480,7 @@ export class SlashrUiGrid {
 			},
 			grid: gridState
 		});
-		
+
 		//this._slashr.app.router.replace();
 
 		//console.log("GRID NEW STATE LOC",state,gridState);
@@ -3102,8 +2488,8 @@ export class SlashrUiGrid {
 		// if(! location.state) location.state = {};
 		// if(! location.state.portals) location.state.portals = {};
 		// location.state.portals[this._route.name] = state;
-				//location.state = state;
-	
+		//location.state = state;
+
 		// throw("LKJSDFH");
 		//if(! this.isDisabled) this.router.history.replace(location);
 
@@ -3138,12 +2524,12 @@ export class SlashrUiGrid {
 			let itemPages = await this.itemLoader(startPage, endPage);
 
 			//console.log("TODO: Update this so that masonary makes sense");
-			if(this.pagesPerSection === 1){
+			if (this.pagesPerSection === 1) {
 				let nItemPages = {};
 				nItemPages[startPage] = itemPages;
 				itemPages = nItemPages;
 			}
-			
+
 			this._metadata.pages = { ...this._metadata.pages, ...itemPages };
 
 			for (let page in itemPages) {
@@ -3157,7 +2543,7 @@ export class SlashrUiGrid {
 				// console.log("grid testset is loaded",this.resultsPerPage,itemPages[endPage].length);
 				this._isLoaded = true;
 			}
-			
+
 			// let scrollPosStart = Slashr.utils.dom.scrollPosition();
 			this.updateSectionLoaded(startPage, endPage);
 			//let scrollPosEnd = Slashr.utils.dom.scrollPosition();
@@ -3198,7 +2584,7 @@ export class SlashrUiGrid {
 	get isDisabled() {
 		return this._metadata.disabled;
 	}
-	get totalItems(){
+	get totalItems() {
 		let totalItems = 0;
 		for (let p in this.pages) {
 			totalItems += this.pages[p].length;
@@ -3267,7 +2653,7 @@ export class SlashrUiGrid {
 		this._metadata.sections = sections;
 		return this;
 	}
-	get noResults(){
+	get noResults() {
 		return this._metadata.noResults || null;
 	}
 	// get initialSection{
@@ -3285,7 +2671,7 @@ export class SlashrUiGrid {
 		this._metadata.ui.deleteGrid(this.idx);
 	}
 	addVisiblePage(page, pageKey) {
-		if (! this._metadata.visiblePages[page]) this._metadata.visiblePages[page] = {};
+		if (!this._metadata.visiblePages[page]) this._metadata.visiblePages[page] = {};
 		this._metadata.visiblePages[page][pageKey] = true;
 	}
 	removeVisiblePage(page, pageKey) {
@@ -3722,7 +3108,7 @@ export const _GridSectionLoader = inject("slashr")(observer(
 					</React.Fragment>
 				);
 			}
-			else if(! this.grid.isLoaded || this.section.num < this.grid.initialSection){
+			else if (!this.grid.isLoaded || this.section.num < this.grid.initialSection) {
 				let loaderCntrStyle = {};
 				loaderCntrStyle.height = "100vh";
 				if (this.grid.history) {
@@ -3744,7 +3130,7 @@ export const _GridSectionLoader = inject("slashr")(observer(
 					</Container>
 				);
 			}
-			else{
+			else {
 				//console.log("TODO: Why does this need a key");
 				return (!this.grid.totalItems && this.grid.noResults) ? <Container key={`grid-no-results-${this.grid.name}`} className="grid-no-results">{this.grid.noResults}</Container> : null;
 			}
@@ -3785,10 +3171,10 @@ export const _GridLoader = inject("slashr")(observer(
 			// console.log("search test grid will react");
 			//this.updateLayout();
 			let isDisabled = this.props.disabled || false;
-			if(isDisabled != this.grid.isDisabled){
+			if (isDisabled != this.grid.isDisabled) {
 				isDisabled ? this.grid.disable() : this.grid.enable();
 			}
-		
+
 			// reset the layout
 			if (this.props.name !== this.grid.name) {
 				this.reset();
@@ -3828,7 +3214,7 @@ export const _GridLoader = inject("slashr")(observer(
 		// 	// });
 		// }
 		render() {
-			
+
 			// let initialPage = (this.props.grid.history) ?  this.props.grid.initialPage : 1;
 			let lastSection = this.grid.initialSection;
 			let sectionLoaders = [];
@@ -4019,7 +3405,6 @@ export const Grid = inject("slashr")(observer(
 			return (this.hiddenColumnPages[column] && this.hiddenColumnPages[column][page]) ? true : false;
 		}
 		handleLoadNext(entry) {
-			alert("LOAD NEXT",entry);
 			if (this.grid.isInitialized && entry.isIntersecting) {
 				this.grid.loadNextPage();
 			}
@@ -4028,7 +3413,7 @@ export const Grid = inject("slashr")(observer(
 			this.grid.loadNextPage();
 		}
 		update() {
-			
+
 		}
 		layoutUpdater() {
 
@@ -4148,7 +3533,7 @@ export const Grid = inject("slashr")(observer(
 			// 			let pageNum = parseInt(page) + 1;
 
 			// 			colItems.push(
-							
+
 			// 			);
 			// 			i++;
 			// 		}
@@ -4156,7 +3541,7 @@ export const Grid = inject("slashr")(observer(
 
 
 
-		
+
 			return (
 				<React.Fragment>
 					{items}
@@ -4199,7 +3584,7 @@ export const Grid = inject("slashr")(observer(
 // export class MasonaryGrid extends React.Component {
 // 	render() {
 // 		return (
-			
+
 // 				<_MasonaryGrid
 // 					{...this.props}
 // 				>
@@ -4210,11 +3595,12 @@ export const Grid = inject("slashr")(observer(
 // 	}
 // }
 
-export const MasonaryGrid = inject("slashr","route")(observer(
+export const MasonaryGrid = inject("slashr", "route")(observer(
 	class MasonaryGrid extends React.Component {
 		constructor(props) {
 			super(props);
 			this.handleWindowResize = this.handleWindowResize.bind(this);
+			this.handleObserveResize = this.handleObserveResize.bind(this);
 			this.handlePageIntersection = this.handlePageIntersection.bind(this);
 			this.handleLoadNext = this.handleLoadNext.bind(this);
 			this.handleLoadNextClick = this.handleLoadNextClick.bind(this);
@@ -4257,11 +3643,23 @@ export const MasonaryGrid = inject("slashr","route")(observer(
 			this.isLoading = false;
 			//this.hasRendered = false;
 			this.hiddenColumnPages = {};
+			this.updateLayoutTimeout = null;
 		}
 		get nextIdx() {
 			return ++this.idx;
 		}
 		handleWindowResize() {
+			// TODO: Make grid resize with props
+			// if (this.updateLayout()) {
+			// 	this.forceUpdate();
+			// }
+			// if(this.updateLayoutTimeout){
+			// 	clearTimeout(this.updateLayoutTimeout);
+			// } 
+			this.grid.updateLayout();
+		}
+		handleObserveResize(e) {
+			
 			// TODO: Make grid resize with props
 			// if (this.updateLayout()) {
 			// 	this.forceUpdate();
@@ -4507,7 +3905,8 @@ export const MasonaryGrid = inject("slashr","route")(observer(
 			// trace(true);
 			return (
 				<Container
-					onWindowResize={this.handleWindowResize}
+					//onWindowResize={this.handleWindowResize}
+					onObserveResize={this.handleObserveResize}
 					className="masonary-grid-cntr"
 					ref={this.ref.cntr}
 					style={{
@@ -4633,7 +4032,7 @@ class prosemirrorParser {
 						// </fragment>;
 						cpnt = node.text;
 						break;
-					
+
 					case "image":
 						if (!node.attrs.src) continue;
 						cpnt = <img key={this.nextKey} src={node.attrs.src} />
@@ -4706,6 +4105,9 @@ class SlashrAnimationQueue {
 	get queue() {
 		return this._metadata.queue
 	}
+	// onComplete(fn){
+	// 	this._metadata.onComplete
+	// }
 	add(elmt, type, options) {
 		if (options.queue) throw ("TODO: Add queues to slashrAnimation");
 		for (let q in this._metadata.queue) {
@@ -5315,15 +4717,14 @@ export class SlashrCoreUtils {
 		}
 		return true;
 	}
-	getFunctionArgumentNames(func){
-		console.log("feed function ",func.prototype.toString());
+	getFunctionArgumentNames(func) {
 		let STRIP_COMMENTS = /(\/\/.*)|(\/\*[\s\S]*?\*\/)|(\s*=[^,\)]*(('(?:\\'|[^'\r\n])*')|("(?:\\"|[^"\r\n])*"))|(\s*=[^,\)]*))/mg;
 		let ARGUMENT_NAMES = /([^\s,]+)/g;
 		let fnStr = func.toString().replace(STRIP_COMMENTS, '');
-		let result = fnStr.slice(fnStr.indexOf('(')+1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
+		let result = fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
 		return result || [];
 	}
-	getMethodArgumentNames(classObj, methodName){
+	getMethodArgumentNames(classObj, methodName) {
 		return this.getFunctionArgumentNames(classObj[methodName]);
 	}
 }
@@ -5581,17 +4982,17 @@ export class SlashrDomUtils {
 		if (options.offsetTop) offset.top -= options.offsetTop;
 		this.scrollTo(offset.left, offset.top);
 	}
-	getBodyWidth(){
+	getBodyWidth() {
 		var body = document.body;
 		var html = document.documentElement;
 		return Math.max(body.scrollWidth, body.offsetWidth, body.getBoundingClientRect().width, html.clientWidth, html.scrollWidth, html.offsetWidth);
 	}
-	getBodyHeight(){
+	getBodyHeight() {
 		var body = document.body;
 		var html = document.documentElement;
 		return Math.max(body.scrollHeight, body.offsetHeight, body.getBoundingClientRect().height, html.clientHeight, html.scrollHeight, html.offsetHeight);
 	}
-	getBodySize(){
+	getBodySize() {
 		return {
 			x: this.getBodyWidth(),
 			y: this.getBodyHeight()
@@ -5599,32 +5000,32 @@ export class SlashrDomUtils {
 	}
 }
 export class SlashrStringUtils {
-	slugify(txt){
-	  return txt.toString().trim().toLowerCase()
-		.replace(/\s+/g, '-')           // Replace spaces with -
-		.replace(/[^\w\-]+/g, '')       // Remove all non-word chars
-		.replace(/\-\-+/g, '-')         // Replace multiple - with single -
-		.replace(/^-+/, '')             // Trim - from start of text
-		.replace(/-+$/, '');            // Trim - from end of text
+	slugify(txt) {
+		return txt.toString().trim().toLowerCase()
+			.replace(/\s+/g, '-')           // Replace spaces with -
+			.replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+			.replace(/\-\-+/g, '-')         // Replace multiple - with single -
+			.replace(/^-+/, '')             // Trim - from start of text
+			.replace(/-+$/, '');            // Trim - from end of text
 	}
-	capitalize(w){
+	capitalize(w) {
 		return w.replace(/^\w/, w => w.toUpperCase());
 	}
-	renderSocialText(text, tagRenderer){
-		if(! text) return text;
-		if(text.indexOf("@[") === -1) return text;
+	renderSocialText(text, tagRenderer) {
+		if (!text) return text;
+		if (text.indexOf("@[") === -1) return text;
 		let regex = /@\[([a-z\d_]+):([a-z\d_ ]+):([a-z\d_-]+)\]/ig;
 		// text = reactStringReplace(text, regex, (match, i) => {
 		// 	console.log("mention",match,i);
 		// });
 		let tags = text.match(regex);
-		if(! tags || ! tags.length) return text;
+		if (!tags || !tags.length) return text;
 		let mentions = [];
-		if(tags && tags.length){
-			tags.forEach((val)=>{
+		if (tags && tags.length) {
+			tags.forEach((val) => {
 				let idx = 0;
 				let tagInfo = val.match(/@\[([a-z\d_]+):([a-z\d_ ]+):([a-z\d_-]+)\]/i);
-				if(tagInfo.length < 4) return;
+				if (tagInfo.length < 4) return;
 				let tag = {
 					match: tagInfo[0],
 					type: tagInfo[1],

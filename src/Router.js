@@ -100,20 +100,23 @@ export const _Router = inject("slashr")(observer(
 
 		}
 		async updateRoutes(prevLocation) {
+			this.props.slashr.router.initializeUiState();
 
-			console.log("route state updateRoutes",JSON.stringify(this.props.location.state));
-
+			
+			
 			let component = null;
 			// let route = null;
 			let isFound = false;
 			// let locationState = this.props.location.state || {};
 			// Update the router
-			let routerState = (this.props.location.state && this.props.location.state._slashr) ? this.props.location.state._slashr.router : {};
+			let uiState = this.props.slashr.router._uiState || {};
+			let routerState = uiState.router || {};
 
 			let prevRoute = this.app.router.route;
 
 			let promises = [];
 			let currPortalName = (routerState && routerState.portal) || "default";
+
 			let hasMatch = false;
 			let currPortals = {};
 
@@ -225,9 +228,7 @@ export const _Router = inject("slashr")(observer(
 			// Poll for the body to be big enough, then scroll
 			// If more than 1 second, just give up and set it
 			let bodySize = this.props.slashr.utils.dom.getBodySize();
-			//console.log("update scroll",window.scrollY,pos.y,pos,this.scrollUpdateAttempts);
 			//console.log("update scroll x",document.documentElement.clientWidth, window.scrollX,pos.x,window.scrollx >= pos.x);
-			// console.log("update scroll",bodySize,pos);
 			if(this.scrollUpdateAttempts >= 100  || 
 				(bodySize.y >= pos.y && bodySize.x >= pos.x)){
 				this.props.slashr.utils.dom.scrollTo(pos.x, pos.y);
@@ -244,8 +245,6 @@ export const _Router = inject("slashr")(observer(
 			//TODO: Move this out of component?
 			if(this.app.scrollBehavior){
 				let uiState = this.props.slashr.router.getUiState(this.props.slashr.router.route.portal);
-				
-				console.log("found ui state",uiState);
 				let scroll = (uiState && uiState.scroll) ? uiState.scroll : false;
 				let ret = this.app.scrollBehavior(this.route, this.prevRoute, scroll);
 				if(ret){
@@ -257,7 +256,10 @@ export const _Router = inject("slashr")(observer(
 					},100);
 
 					// Check to see if it's ok to scroll
-					this.updateScroll(ret);
+					setTimeout(()=>{
+						this.updateScroll(ret);
+					},5);
+					// this.updateScroll(ret);
 				}
 			}
 		}
