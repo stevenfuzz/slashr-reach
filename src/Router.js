@@ -102,8 +102,6 @@ export const _Router = inject("slashr")(observer(
 		async updateRoutes(prevLocation) {
 			this.props.slashr.router.initializeUiState();
 
-			
-			
 			let component = null;
 			// let route = null;
 			let isFound = false;
@@ -202,6 +200,9 @@ export const _Router = inject("slashr")(observer(
 			// Update the routes
 			this.props.slashr.router.activePortalName = currPortalName;
 			this.route = this.app.router.route;
+
+			console.log("current route",this.route);
+
 			this.prevRoute = prevRoute;
 			// this.currPortalName = currPortalName;
 
@@ -470,17 +471,23 @@ export const RouteLink = inject("slashr")(observer(
 	}
 ));
 
-const ContentRoute = withRouter(inject("domain")(observer(
-	class ContentRoute extends React.Component {
+export const Redirect = inject("slashr")(observer(
+	class Redirect extends React.Component {
 		constructor(props) {
 			super(props);
-			throw ("CONTE TROUTE");
+			this.initialize();
+		}
+		initialize() {
+			this.routeProps = this.props.slashr.router.parseLinkProps(this.props);
+		}
+		componentDidMount(){
+			this.props.slashr.app.router.push(this.routeProps);
 		}
 		render() {
 			return null;
 		}
 	}
-)));
+));
 
 
 
@@ -558,21 +565,19 @@ export const RouteDialog = inject("slashr")(observer(
 
 			//TODO: Allow for multiple layers
 			//TODO: Refactor this
-			let routerPortal = this.slashr.router.portal("default");
-			if (this.slashr.router.hasRoute(this.name)) this.slashr.router.reset(this.name);
-
-			let pushState = this.slashr.router.createState({
-				portal: "default"
-			});
-
-			console.log("pushing state",pushState);
-
-			this.slashr.router.history.push({
-				pathname: routerPortal.location.pathname,
-				state:pushState,
-				search: routerPortal.location.search || ""
-			});
-
+		
+			if (this.slashr.router.hasRoute(this.name)){
+				let routerPortal = this.slashr.router.portal("default");
+				this.slashr.router.reset(this.name);
+				let pushState = this.slashr.router.createState({
+					portal: "default"
+				});
+				this.slashr.router.history.push({
+					pathname: routerPortal.location.pathname,
+					state:pushState,
+					search: routerPortal.location.search || ""
+				});
+			}
 			//this.slashr.app.router.push(routerPortal.location.pathname + (routerPortal.location.search || ""));
 		}
 		componentWillReact() {

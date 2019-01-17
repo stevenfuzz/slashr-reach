@@ -926,8 +926,6 @@ export const ImageSelectArea = inject(["form"])(observer(
 			// this.handleImageChange = this.handleImageChange.bind(this);
 			this.handleImageRemove = this.handleImageRemove.bind(this);
 			//TODO: Use mobx instead with the form class
-			
-			console.log("1234 construct image src",this.elmt.imageSrc);
 			this.imageSrc = this.props.imageSrc || null;
 			
 
@@ -945,7 +943,6 @@ export const ImageSelectArea = inject(["form"])(observer(
 		}
 		componentDidMount(){
 			if(this.props.imageSrc){
-				console.log("1234 mount image src",this.elmt.imageSrc);
 				this.elmt.imageSrc = this.props.imageSrc;
 			}
 		}
@@ -956,7 +953,6 @@ export const ImageSelectArea = inject(["form"])(observer(
 		}
 		componentDidUpdate(prevProps){
 			if(prevProps.imageSrc !== this.props.imageSrc){
-				console.log("1234 up image src didUp",this.props.imageSrc);
 				this.elmt.imageSrc = this.props.imageSrc;
 			}
 		}
@@ -970,7 +966,6 @@ export const ImageSelectArea = inject(["form"])(observer(
 			});
 			let className = "image-select-area-container";
 			if(this.props.className) className += ` ${this.props.className}`;
-			console.log("1234 render image src",this.elmt.imageSrc);
 			return(
 				<Container
 					className={className}

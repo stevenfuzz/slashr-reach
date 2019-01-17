@@ -159,7 +159,6 @@ export class SlashrRouter{
 	updateUiState(name, state = {}){
 
 		if(name !== this._activePortalName){
-			
 			return false;
 		}
 		
@@ -230,6 +229,7 @@ export class SlashrRouter{
 		// let sessKey = this.uiStateSessionKey;
 
 		// if(sessKey) sessionStorage.removeItem(sessKey);
+		// console.log("pushing ui state pushUiState",this._location.pathname,state);
 		this._slashr.router.history.replace({
 			pathname: this._location.pathname,
 			state: state,
@@ -241,7 +241,7 @@ export class SlashrRouter{
 		let routerState = {
 			portals: {}
 		};
-		
+
 		let state = options.state || {};
 		
 		routerState.portal = options.portal || "default";
@@ -386,9 +386,7 @@ class SlashrRouterPortal{
 		let ret = null;
 		let location = this._router.location;
 		let useDefault = this._name === "default";
-
 		let routerState = this._router.slashrState.router;
-
 		if(routerState && routerState.portals && routerState.portals[this._name]){
 			if(routerState.portal !== this._name){
 				useDefault = false;
@@ -417,9 +415,7 @@ class SlashrRouterPortal{
 				ret.state = location.state;
 			}
 			if(location.search) ret.search = location.search;
-
 		}
-
 		return ret;
 	}
 	reset(){
@@ -437,6 +433,7 @@ class SlashrRouterPortal{
 		//this._routerName = (props.location.state && props.location.state.router) || "default";
 		this._ui = {};
 		this._hasLoaded = true;
+
 		if(route.location){
 			let routerState = (route.location.state && route.location.state._slashr) ? route.location.state._slashr.router : {};
 
@@ -489,6 +486,11 @@ class SlashrRouterPortal{
 			pathname: this._location.pathname,
 			search: this._location.search
 		}
+		// let location = this.parseLocation();
+		// let state = {
+		// 	pathname: location.pathname,
+		// 	search: location.search
+		// }
 		state.ui = this._ui;
 
 		if(this._location.state){
@@ -607,10 +609,11 @@ class SlashrAppRouter{
 		}
 		//TODO: This will not work for multiple layters
 		if(portal === "default"){
-			alert("Figure out now to remove the layers.");
-			// for(let name in state._slashr.router.portals){
-			// 	if(name !== portal) delete state._slashr.router.portals[name];
-			// }
+			for(let name in state._slashr.router.portals){
+				if(name !== portal){
+					delete state._slashr.router.portals[name];
+				}
+			}
 		}
 
 		//console.log("PUSH ROUTE");
@@ -627,7 +630,7 @@ class SlashrAppRouter{
 		// };
 		
 		// console.log("router push to histoiry?",portal,state,this._slashr.router.location.pathname,this._slashr.router.location.state,route,historyState);
-
+		console.log("update route history",type, JSON.stringify(route), JSON.stringify(state));
 		switch(type){
 			case "push":
 				this._slashr.router.history.push(route, state);

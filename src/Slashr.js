@@ -1958,7 +1958,7 @@ export const _Dialog = inject("slashr")(observer(
 	}
 ));
 
-class BodyPortal extends React.Component {
+export class BodyPortal extends React.Component {
 	constructor(props) {
 		super(props);
 	}
