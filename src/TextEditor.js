@@ -235,9 +235,6 @@ export const TextEditor = inject(["form"])(observer(
 				bind("Mod-BracketLeft", lift)
 				bind("Escape", selectParentNode)
 
-				console.log("SLDKFJLSDJFLKSJDFLKJSDLFKJLSDKJFLKSDJFLSKJDF");
-				console.log(type);
-
 				if (type = schema.marks.strong)
 					bind("Mod-b", toggleMark(type))
 				if (type = schema.marks.em)
@@ -260,7 +257,7 @@ export const TextEditor = inject(["form"])(observer(
 					bind("Shift-Enter", cmd)
 					if (mac) bind("Ctrl-Enter", cmd)
 				}
-				console.log(schema.nodes.list_item);
+
 				if (type = schema.nodes.list_item) {
 					bind("Enter", splitListItem(type))
 					bind("Mod-[", liftListItem(type))
@@ -279,8 +276,6 @@ export const TextEditor = inject(["form"])(observer(
 						return true
 					})
 				}
-
-				console.log(keys);
 
 				return keys
 
@@ -358,9 +353,7 @@ export const TextEditor = inject(["form"])(observer(
 		}
 
 		async handleImageChange(e) {
-			console.log(e.target.value);
 			let id = Date.now(); // set to {} in example
-			console.log("date", id);
 			// Persist the element for after await
 			e.persist();
 
@@ -409,10 +402,8 @@ export const TextEditor = inject(["form"])(observer(
 		}
 		componentDidMount() {
 			this.createEditorView();
-			console.log(this.props);
 		}
 		focus() {
-			console.log("FOCUS FOCUS FOCUS!!!!!!");
 			if (this.elmt._props.editor.view) this.elmt._props.editor.view.focus();
 		}
 		dispatchTransaction(transaction) {
@@ -554,7 +545,7 @@ export const TextEditorLinkDialog = inject(["form"])(observer(
 		}
 		
 		handleObserver(entities){
-			console.log(entities);
+			//console.log(entities);
 		}
 		handleSubmit(form){
 			let schema = this.editor.schema;
@@ -582,7 +573,6 @@ export const TextEditorLinkDialog = inject(["form"])(observer(
 			this.editor.elmt._props.doOpenLinkDialog = true;
 		}
 		close(){
-			console.log("setting closed");
 			this.editor.elmt._props.doOpenLinkDialog = false;
 		}
 		get isOpen(){
@@ -734,7 +724,6 @@ export const TextEditorToolbarItem = inject(["form"])(observer(
 						let nClassName = null;
 						for (let i in $from.path) {
 							if ($from.path[i].type) {
-								console.log($from.path[i].type.name);
 								if ($from.path[i].type === this.editor.schema.nodes.paragraph) {
 									nType = this.editor.schema.nodes.paragraph;
 								}
@@ -775,7 +764,6 @@ export const TextEditorToolbarItem = inject(["form"])(observer(
 							let type = null;
 							for (let i in $from.path) {
 								if ($from.path[i].type) {
-									console.log($from.path[i].type.name);
 									if ($from.path[i].type === this.editor.schema.nodes.paragraph) {
 										type = this.editor.schema.nodes.paragraph;
 										break;
@@ -920,7 +908,6 @@ export const TextEditorToolbarItem = inject(["form"])(observer(
 			else {
 				for(let type of this.item.types){
 					for (let i in $from.path) {
-						console.log($from.path[i].type);
 						if ($from.path[i].type && $from.path[i].type == type) {
 							isActive = true;
 							break;

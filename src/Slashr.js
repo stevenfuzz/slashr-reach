@@ -4,6 +4,7 @@ import { NavLink, withRouter } from 'react-router-dom';
 import { Provider, observer, inject } from 'mobx-react';
 import { set as mobxSet, trace, decorate, observable, action, computed, intercept, observe, onReactionError, toJS } from "mobx";
 import { SlashrRouter, SlashrApp } from './SlashrRouter';
+import ResizeObserver from 'resize-observer-polyfill';
 // import { throws } from 'assert';
 // import { parse } from 'url';
 
@@ -65,6 +66,7 @@ export class Slashr {
 		return SlashrDomain;
 	}
 	static listen(domain, props = {}) {
+		domain.prototype.__slashrMemberStateProps = props;
 		decorate(domain, props);
 	}
 	// setConfig(config) {
@@ -108,6 +110,7 @@ class SlashrController {
 	}
 }
 class SlashrDomain {
+	__slashrDomainState = null;
 	constructor() {
 
 	}
@@ -123,10 +126,33 @@ class SlashrDomain {
 	get utils() {
 		return this.utilities;
 	}
-	setState(values) {
-		mobxSet(this, values);
+	setState(values){
+		let memberStateProps = this.__slashrMemberStateProps ? this.__slashrMemberStateProps : {};
+		for(let name in values){
+			if(name in memberStateProps) this[name] = values[name];
+			else this.__slashrDomainState[name] = values[name];
+		}
+		// console.log("set state",this.__slashrMemberState());
+		// mobxSet(this, values);
+	}
+	get state(){
+		return new Proxy(this, {
+			get : function(obj, prop){
+				if(prop in obj.__slashrDomainState) return obj.__slashrDomainState[prop];
+				else return null;	
+			}
+		});	
+	}
+	set state(state){
+		if(this.__slashrDomainState) throw("State has already been set.");
+		this.__slashrDomainState = state;
 	}
 }
+decorate(SlashrDomain, {
+	__slashrDomainState: observable,
+	setState: action
+});
+
 
 class SlashrControllerActionResultFactory {
 	component(component) {
@@ -365,7 +391,7 @@ class SlashrUi {
 			case "observeResize":
 				if (!this._events.observeResize) {
 					// Require the polyfill before requiring any other modules.
-					require('resize-observer-polyfill');
+					// require('resize-observer-polyfill');
 					this._events.observeResize = {};
 					this._resizeObserver = new ResizeObserver(this._handleObserveResize);
 
@@ -1554,14 +1580,12 @@ class __Element extends React.PureComponent {
 
 export const Element = React.forwardRef((props, ref) => {
 	return (
-		<Provider slashr={Slashr.getInstance()}>
-			<_Element
-				{...props}
-				forwardRef={ref}
-			>
-				{props.children}
-			</_Element>
-		</Provider>
+		<_Element
+			{...props}
+			forwardRef={ref}
+		>
+			{props.children}
+		</_Element>
 	);
 });
 export const Text = React.forwardRef((props, ref) => (
@@ -1711,14 +1735,12 @@ export class SocialText extends React.Component {
 
 export const Menu = React.forwardRef((props, ref) => {
 	return (
-		<Provider slashr={Slashr.getInstance()}>
-			<_Menu
-				{...props}
-				forwardRef={ref}
-			>
-				{props.children}
-			</_Menu>
-		</Provider>
+		<_Menu
+			{...props}
+			forwardRef={ref}
+		>
+			{props.children}
+		</_Menu>
 	);
 });
 
@@ -1850,14 +1872,12 @@ export class MenuItem extends React.Component {
 
 export const Dialog = React.forwardRef((props, ref) => {
 	return (
-		<Provider slashr={Slashr.getInstance()}>
-			<_Dialog
-				{...props}
-				forwardRef={ref}
-			>
-				{props.children}
-			</_Dialog>
-		</Provider>
+		<_Dialog
+			{...props}
+			forwardRef={ref}
+		>
+			{props.children}
+		</_Dialog>
 	);
 });
 
@@ -2113,13 +2133,11 @@ decorate(SlashrUiCalendar, {
 export class Calendar extends React.Component {
 	render() {
 		return (
-			<Provider slashr={Slashr.getInstance()}>
-				<_Calendar
-					{...this.props}
-				>
-					{this.props.children}
-				</_Calendar>
-			</Provider>
+			<_Calendar
+				{...this.props}
+			>
+				{this.props.children}
+			</_Calendar>
 		);
 	}
 }
@@ -3214,7 +3232,7 @@ export const _GridLoader = inject("slashr")(observer(
 		// 	// });
 		// }
 		render() {
-
+			console.log("grid render 2");
 			// let initialPage = (this.props.grid.history) ?  this.props.grid.initialPage : 1;
 			let lastSection = this.grid.initialSection;
 			let sectionLoaders = [];

@@ -201,8 +201,6 @@ export const _Router = inject("slashr")(observer(
 			this.props.slashr.router.activePortalName = currPortalName;
 			this.route = this.app.router.route;
 
-			console.log("current route",this.route);
-
 			this.prevRoute = prevRoute;
 			// this.currPortalName = currPortalName;
 
@@ -465,7 +463,7 @@ export const RouteLink = inject("slashr")(observer(
 		render() {
 			//let uid = this.props.slashr.router.uid;
 			return (
-				<a href={this.routeProps.route} className={this.className} onClick={this.handleClick}>{this.props.children}</a>
+				<a href={this.routeProps.route} className={this.className} style={this.props.style} onClick={this.handleClick}>{this.props.children}</a>
 			);
 		}
 	}

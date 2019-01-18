@@ -59,11 +59,11 @@ export class SlashrRouter{
 
 		if (!controller[actionMethod]) throw (`Controller Error: ${actionMethod} not found in controller ${controller.constructor.name}`);
 		//alert(route.portal);
-		this.handleLoading(route.portal);
+		this.handleLoading(route, this._route);
 
 		route.component = await controller[actionMethod](route.data);
 
-		this.handleLoaded(route.portal);
+		this.handleLoaded(route, this._route);
 
 		this.update(route);
 
@@ -89,13 +89,13 @@ export class SlashrRouter{
 		if(! this._portals[name]) return false;
 		return this._portals[name];
 	}
-	handleLoading(name){
-		if(! this._portals[name]) return false;
-		return this._portals[name].handleLoading();
+	handleLoading(to, from){
+		if(! this._portals[to.portal]) return false;
+		return this._portals[to.portal].handleLoading(to, from);
 	}
-	handleLoaded(name){
-		if(! this._portals[name]) return false;
-		return this._portals[name].handleLoaded();
+	handleLoaded(to, from){
+		if(! this._portals[to.portal]) return false;
+		return this._portals[to.portal].handleLoaded(to, from);
 	}
 	get slashrState(){
 		return (this._uiState) ? this._uiState : {}; 
@@ -360,7 +360,7 @@ class SlashrRoute{
 		return this.data;
 	}
 	get path(){
-		return this.path;
+		return this._metadata.path;
 	}
 	get name(){
 		return this._metadata.route.name || null;
@@ -499,11 +499,11 @@ class SlashrRouterPortal{
 
 		return state;
 	}
-	handleLoading(){
-		if(this._onLoading) this._onLoading();
+	handleLoading(to, from){
+		if(this._onLoading) this._onLoading(to, from);
 	}
-	handleLoaded(){
-		if(this._onLoaded) this._onLoaded();
+	handleLoaded(to, from){
+		if(this._onLoaded) this._onLoaded(to, from);
 	}
 	get component(){
 		if(! this._uid) return null;
@@ -630,7 +630,7 @@ class SlashrAppRouter{
 		// };
 		
 		// console.log("router push to histoiry?",portal,state,this._slashr.router.location.pathname,this._slashr.router.location.state,route,historyState);
-		console.log("update route history",type, JSON.stringify(route), JSON.stringify(state));
+
 		switch(type){
 			case "push":
 				this._slashr.router.history.push(route, state);
