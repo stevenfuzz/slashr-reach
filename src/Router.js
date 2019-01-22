@@ -170,7 +170,6 @@ export const _Router = inject("slashr")(observer(
 						if (match && match.isExact) {
 							currPortals[portalName] = true;
 							hasMatch = true;
-
 							promises.push(
 								this.initializeActionResult(portalName, routeData, match)
 							);
@@ -195,8 +194,23 @@ export const _Router = inject("slashr")(observer(
 					this.props.slashr.router.portals[portal].reset();
 				}
 			}
-			await Promise.all(promises);
 
+			this.props.slashr.router.loading = true;
+			try{
+				await Promise.all(promises);
+			}
+			catch(err){
+				console.error("A router error has occurred:",err);
+			}
+			finally{
+				this.props.slashr.router.loading = false;
+			}
+
+			// Update the render uid to render the new components
+			for (let portal in this.props.slashr.router.portals) {
+				this.props.slashr.router.render(portal);
+			}
+			
 			// Update the routes
 			this.props.slashr.router.activePortalName = currPortalName;
 			this.route = this.app.router.route;
@@ -425,10 +439,10 @@ export const RouteLink = inject("slashr")(observer(
 			};
 		}
 		componentWillReact() {
-		
+			this.initialize();
 		}
 		componentDidUpdate() {
-			//this.initialize();
+			
 		}
 		handleClick(e) {
 			e.preventDefault();
@@ -479,7 +493,7 @@ export const Redirect = inject("slashr")(observer(
 			this.routeProps = this.props.slashr.router.parseLinkProps(this.props);
 		}
 		componentDidMount(){
-			this.props.slashr.app.router.push(this.routeProps);
+			this.props.slashr.app.router.replace(this.routeProps);
 		}
 		render() {
 			return null;

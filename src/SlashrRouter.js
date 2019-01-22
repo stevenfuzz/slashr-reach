@@ -9,6 +9,7 @@ export class SlashrRouter{
 		this._prevLocation = null;
 		this._isInitialized = false;
 		this._activePortalName = "default";
+		this._isLoading = false;
 		
 		this._activeRouteName = null;
 		this._route = null;
@@ -78,6 +79,10 @@ export class SlashrRouter{
 		if(! this._portals[route.portal]) return false;
 		return this._portals[route.portal].update(route);
 	}
+	render(name){
+		if(! this._portals[name]) return false;
+		this._portals[name].render();
+	}
 	reset(name){
 		if(! this._portals[name]) return false;
 		this._portals[name].reset();
@@ -96,6 +101,12 @@ export class SlashrRouter{
 	handleLoaded(to, from){
 		if(! this._portals[to.portal]) return false;
 		return this._portals[to.portal].handleLoaded(to, from);
+	}
+	set loading(isLoading){
+		this._isLoading = isLoading;
+	}
+	get isLoading(){
+		return this._isLoading;
 	}
 	get slashrState(){
 		return (this._uiState) ? this._uiState : {}; 
@@ -158,6 +169,8 @@ export class SlashrRouter{
 	}
 	updateUiState(name, state = {}){
 
+		if(this.isLoading) return false;
+
 		if(name !== this._activePortalName){
 			return false;
 		}
@@ -203,6 +216,9 @@ export class SlashrRouter{
 	// 	}
 	// }
 	pushUiState(){
+
+		if(this.isLoading) return false;
+
 		let state = this._location.state || {};
 		state._slashr = this._uiState;
 
@@ -230,6 +246,7 @@ export class SlashrRouter{
 
 		// if(sessKey) sessionStorage.removeItem(sessKey);
 		// console.log("pushing ui state pushUiState",this._location.pathname,state);
+		
 		this._slashr.router.history.replace({
 			pathname: this._location.pathname,
 			state: state,
@@ -261,15 +278,17 @@ export class SlashrRouter{
 	parseLinkProps(props) {
 		let routeProps = {
 			route: props.route || null,
-			portal: props.portal || "default"
+			portal: props.portal || "default",
+			delay: props.delay || 0
 		};
 		if (!props.to) throw ("Route Link Error: No to.");
 		if (typeof props.to === 'object') {
+
 			if (props.to.pathname) routeProps.route = props.to.pathname;
 			else if (props.to.route) routeProps.route = props.to.route;
-			if (props.to.portal) {
-				routeProps.portal = props.to.portal;
-			}
+
+			if (props.to.portal) routeProps.portal = props.to.portal;
+			if(props.to.delay) routeProps.delay = props.to.delay;
 		}
 		else routeProps.route = props.to;
 		if (!routeProps.route) throw ("Route Link Error: No pathname.");
@@ -369,6 +388,7 @@ class SlashrRoute{
 
 class SlashrRouterPortal{
 	_uid = null;
+	_renderUid = null;
 	_component = null;
 	_location = null;
 	_ui = {};
@@ -424,6 +444,7 @@ class SlashrRouterPortal{
 		this._ui = {};
 		this._hasLoaded = false;
 		this._uid = null;
+		this._renderUid = null;
 	}
 	update(route){
 
@@ -433,6 +454,7 @@ class SlashrRouterPortal{
 		//this._routerName = (props.location.state && props.location.state.router) || "default";
 		this._ui = {};
 		this._hasLoaded = true;
+		//this._renderUid = null;
 
 		if(route.location){
 			let routerState = (route.location.state && route.location.state._slashr) ? route.location.state._slashr.router : {};
@@ -472,6 +494,11 @@ class SlashrRouterPortal{
 			this._uid = uid;
 		}
 	}
+	render(){
+		if(this._uid !== this._renderUid){
+			this._renderUid = this._uid;
+		}
+	}
 	updateUiState(state){
 		for(let key in state){
 			this._ui[key] = state[key];
@@ -506,7 +533,7 @@ class SlashrRouterPortal{
 		if(this._onLoaded) this._onLoaded(to, from);
 	}
 	get component(){
-		if(! this._uid) return null;
+		if(! this._renderUid) return null;
 		return this._component;
 	}
 	get hasRoute(){
@@ -546,7 +573,8 @@ class SlashrRouterPortal{
 }
 decorate(SlashrRouterPortal, {
 	// component: computed,
-	_uid: observable
+	_uid: observable,
+	_renderUid: observable
 });
 
 
@@ -560,6 +588,7 @@ decorate(SlashrRouterPortal, {
 class SlashrAppRouter{
 	constructor(slashr, options = {}){
 		this._slashr = slashr;
+		this._updateTimeout = null;
 		// this._metadata = {
 		// 	scrollBehavior: options.scrollBehavior
 		// }
@@ -573,6 +602,13 @@ class SlashrAppRouter{
 
 	}
 	_updateRoute(type, route, options = {}){
+		// Check for a pending push
+		if(this._updateTimeout){
+			clearTimeout(this._updateTimeout);
+			this._updateTimeout = null;
+		}
+		if(this._slashr.router.isLoading) return false;
+		
 		let portal = "default";
 
 		if(typeof route === "object"){
@@ -590,7 +626,10 @@ class SlashrAppRouter{
 		options.portal = portal;
 		options.route = route;
 
+		let delay = options.delay || 0;
 		let state = this._slashr.router.createState(options);
+
+		console.log(state);
 
 		// Check if the next portal is modal
 		// If not, remove any modal portals
@@ -630,15 +669,24 @@ class SlashrAppRouter{
 		// };
 		
 		// console.log("router push to histoiry?",portal,state,this._slashr.router.location.pathname,this._slashr.router.location.state,route,historyState);
-
+		let fn = null;
+	
 		switch(type){
 			case "push":
-				this._slashr.router.history.push(route, state);
+				fn = this._slashr.router.history.push;
 				break;
 			case "replace":
-				this._slashr.router.history.replace(route, state);
+				fn = this._slashr.router.history.replace;
 				break;
 		}
+		console.log(route,state,fn,delay);
+		if(! fn) return false;
+		if(delay) this._updateTimeout = setTimeout(()=>{
+			fn(route,state);
+			this._updateTimeout = null;
+		},delay);
+		else fn(route,state);
+		return true;
 	}
 	back(options){
 		this._slashr.router.pushUiState();

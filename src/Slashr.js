@@ -129,8 +129,9 @@ class SlashrDomain {
 	setState(values){
 		let memberStateProps = this.__slashrMemberStateProps ? this.__slashrMemberStateProps : {};
 		for(let name in values){
+			console.log();
 			if(name in memberStateProps) this[name] = values[name];
-			else this.__slashrDomainState[name] = values[name];
+			else if(this.__slashrDomainState) this.__slashrDomainState[name] = values[name];
 		}
 		// console.log("set state",this.__slashrMemberState());
 		// mobxSet(this, values);
@@ -306,7 +307,7 @@ class SlashrUi {
 	_handleWindowResize() {
 		if (this._windowResizeTimeout) return;
 		this._windowResizeTimeout = setTimeout(() => {
-			window.requestAnimationFrame(() => {
+			//window.requestAnimationFrame(() => {
 				if (!Object.keys(this._events.resize).length) {
 					this.removeEventListener("resize");
 					this._windowResizeTimeout = null;
@@ -316,13 +317,13 @@ class SlashrUi {
 					this._events.resize[i]();
 				}
 				this._windowResizeTimeout = null;
-			});
+			//});
 		}, 100);
 	}
 	_handleWindowScroll() {
 		if (this._windowScrollTimeout) return;
 		this._windowScrollTimeout = setTimeout(() => {
-			window.requestAnimationFrame(() => {
+			//window.requestAnimationFrame(() => {
 				if (!Object.keys(this._events.scroll).length) {
 					this.removeEventListener("scroll");
 					this._windowScrollTimeout = null;
@@ -332,11 +333,11 @@ class SlashrUi {
 					this._events.scroll[i]();
 				}
 				this._windowScrollTimeout = null;
-			});
+			//});
 		}, 100);
 	}
 	_handleObserveIntersection(entries) {
-		window.requestAnimationFrame(() => {
+		//window.requestAnimationFrame(() => {
 			for (let ent of entries) {
 				for (let elmtIdx in this._events.observeIntersection) {
 					if (this._metadata.elmts[elmtIdx].ref.current == ent.target) {
@@ -345,10 +346,10 @@ class SlashrUi {
 					}
 				}
 			}
-		});
+		//});
 	}
 	_handleObserveResize(entries) {
-		window.requestAnimationFrame(() => {
+		//window.requestAnimationFrame(() => {
 			for (let ent of entries) {
 				for (let elmtIdx in this._events.observeResize) {
 					if (this._metadata.elmts[elmtIdx].ref.current == ent.target) {
@@ -357,7 +358,7 @@ class SlashrUi {
 					}
 				}
 			}
-		});
+		//});
 	}
 
 	addEventListener(event, elmt, callback) {
@@ -1043,20 +1044,15 @@ class SlashrUiElement {
 			this._metadata.state.animationState[type].states[state] = true;
 		}
 		this._metadata.state.animationState[type].isComplete = isComplete;
+
 	}
 	_triggerAnimationEvents() {
 		let animationState = this._metadata.state.animationState;
-		//console.log("trigger _updateElmtAnimationState 3", animationState);
 		if (!animationState) return false;
-
-		//console.log("slider state",animationState.transition.states);
 		if (this.props.onTransition && animationState.transition && animationState.transition.states) {
-			//console.log("_update slider trigger animat",animationState.transition.states);
 			for (let state in animationState.transition.states) {
-				//console.log("_update in loop",state,animationState.transition.states[state]);
 				if (animationState.transition.states[state]) {
 					this.props.onTransition(state);
-					//	console.log("_update report slider trigger animat on trans",state);
 					animationState.transition.states[state] = false;
 				}
 			}
@@ -1419,7 +1415,7 @@ export const _Element = inject("slashr")(observer(
 				//console.log("element componentDidUpdate",this.elmt.className);
 				let update = SlashrUiElement.reducePropUpdates(prevProps, this.props);
 				// TODO: this should probably be moved
-				this.elmt._triggerAnimationEvents();
+				// this.elmt._triggerAnimationEvents();
 				if (update === false) return false;
 
 				this.elmt.handleUpdate(update);
@@ -2333,7 +2329,8 @@ export class SlashrUiGrid {
 			onLoad: props.onLoad || null,
 			items: props.items || null,
 			ref: props.forwardRef || React.createRef(),
-			eventHandlers: {}
+			eventHandlers: {},
+			updateLayoutTimeout: null
 		};
 
 		this.initialize(props);
@@ -2421,11 +2418,22 @@ export class SlashrUiGrid {
 
 	}
 	updateLayout() {
-		if (this.layoutUpdater) {
-			this.layoutUpdater();
-			for (let i in this.sections) {
-				this.sections[i].updateLayout();
+		try{
+			if (this.layoutUpdater) {
+				// if(this._metadata.updateLayoutTimeout) return;
+				// this._metadata.updateLayoutTimeout = setTimeout(
+					// async ()=>{
+						this.layoutUpdater();
+						for (let i in this.sections) {
+							this.sections[i].updateLayout();
+						}
+						this._metadata.updateLayoutTimeout = null;
+			// 		},250);
 			}
+		}
+		catch(err){
+			// Probably unmounted before updating...
+			console.err("Grid update error",err);
 		}
 	}
 	updateScrollHistory() {
@@ -2491,13 +2499,15 @@ export class SlashrUiGrid {
 		// console.log("grid handle intersect state", this.props.section, section.ref.current, gridState[this.name]);
 		//state._slashrUiGrid = gridState;
 
-		this._slashr.router.updateUiState(this._route.name, {
-			scroll: {
-				x: window.scrollX,
-				y: window.scrollY
-			},
-			grid: gridState
-		});
+		if(! this.isDisabled){
+			this._slashr.router.updateUiState(this._route.name, {
+				scroll: {
+					x: window.scrollX,
+					y: window.scrollY
+				},
+				grid: gridState
+			});
+		}
 
 		//this._slashr.app.router.replace();
 
@@ -3232,7 +3242,6 @@ export const _GridLoader = inject("slashr")(observer(
 		// 	// });
 		// }
 		render() {
-			console.log("grid render 2");
 			// let initialPage = (this.props.grid.history) ?  this.props.grid.initialPage : 1;
 			let lastSection = this.grid.initialSection;
 			let sectionLoaders = [];
@@ -3748,6 +3757,7 @@ export const MasonaryGrid = inject("slashr", "route")(observer(
 		// 	return true;
 		// }
 		layoutUpdater() {
+			if(! this.ref.cntr.current) return false;
 
 			// Update the number of items
 			let nTotalItems = 0;
@@ -4439,6 +4449,7 @@ export class SlashrAnimator {
 		if (state != this._metadata.prevState) {
 			this.elmt.updateAnimationState(this.type, state, isComplete);
 			this._metadata.prevState = state;
+			this.elmt._triggerAnimationEvents();
 		}
 	}
 
