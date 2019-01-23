@@ -569,7 +569,6 @@ export const RouteDialog = inject("slashr")(observer(
 		// }
 		handleOpen() {
 			if (this.props.onOpen) this.props.onOpen();
-			// let postRoute = this.props.domain.post.renderRoute(dialogState.type, dialogState.uid, {dialog: false});
 			// if(this.location.pathname === this.props.location.pathname){
 			// 	this.props.history.go(-1);
 			// }

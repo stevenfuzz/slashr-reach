@@ -5046,13 +5046,24 @@ export class SlashrDomUtils {
 	}
 }
 export class SlashrStringUtils {
-	slugify(txt) {
-		return txt.toString().trim().toLowerCase()
+	slugify(txt = "") {
+		if(! txt) return "";
+		let slug = txt.toString().trim().toLowerCase()
 			.replace(/\s+/g, '-')           // Replace spaces with -
 			.replace(/[^\w\-]+/g, '')       // Remove all non-word chars
 			.replace(/\-\-+/g, '-')         // Replace multiple - with single -
 			.replace(/^-+/, '')             // Trim - from start of text
 			.replace(/-+$/, '');            // Trim - from end of text
+		
+		let slugArr = [];
+		let len = 0;
+		slug.split("-").forEach((val)=>{
+			if(len + val.length < 60){
+				slugArr.push(val);
+				len += val.length;
+			} 
+		});
+		return slugArr.join("-");
 	}
 	capitalize(w) {
 		return w.replace(/^\w/, w => w.toUpperCase());
