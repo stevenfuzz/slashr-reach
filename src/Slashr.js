@@ -120,6 +120,12 @@ class SlashrDomain {
 	get mdl() {
 		return this.model;
 	}
+	get router() {
+		return Slashr.getInstance().app.router;
+	}
+	get rtr() {
+		return this.router;
+	}
 	get utilities() {
 		return Slashr.getInstance().app.utils;
 	}
@@ -133,8 +139,6 @@ class SlashrDomain {
 			if(name in memberStateProps) this[name] = values[name];
 			else if(this.__slashrDomainState) this.__slashrDomainState[name] = values[name];
 		}
-		// console.log("set state",this.__slashrMemberState());
-		// mobxSet(this, values);
 	}
 	get state(){
 		return new Proxy(this, {
@@ -1986,34 +1990,47 @@ export class BodyPortal extends React.Component {
 	}
 }
 
-export class HeadTags extends React.Component {
-	constructor(props) {
-		super(props);
-	}
-	renderTags() {
-		let tags = [];
-		if (!this.props.tags) return false;
-		if (this.props.tags.title) tags.push(<title key="title">{this.props.tags.title}</title>);
-		if (this.props.tags.meta) {
-			if (this.props.tags.meta.type) tags.push(<meta key="og:type" property="og:type" content={this.props.tags.meta.type} />);
-			if (this.props.tags.meta.url) tags.push(<meta key="og:url" property="og:url" content={this.props.tags.meta.url} />);
-			if (this.props.tags.meta.siteName) tags.push(<meta key="og:site_name" property="og:site_name" content={this.props.tags.meta.siteName} />);
-			if (this.props.tags.meta.title) tags.push(<meta key="og:title" property="og:title" content={this.props.tags.meta.title} />);
-			if (this.props.tags.meta.description) tags.push(<meta key="og:description" property="og:description" content={this.props.tags.meta.description} />);
-			if (this.props.tags.meta.image) tags.push(<meta key="og:image" property="og:image" content={this.props.tags.meta.image} />);
-			if (this.props.tags.meta.facebookAppId) tags.push(<meta key="fb:app_id" property="fb:app_id" content={this.props.tags.meta.facebookAppId} />);
-			if (this.props.tags.meta.twitterCard) tags.push(<meta key="twitter:card" property="twitter:card" content={this.props.tags.meta.twitterCard} />);
-
+export const HeadTags = inject("slashr")(observer(
+	class HeadTags extends React.Component {
+		constructor(props) {
+			super(props);
 		}
-		return tags;
+		renderTags() {
+			let headTags = this.props.slashr.router.headTags;
+			
+			if (!headTags) return null;
+			
+			let tags = [];
+			if (headTags.title) tags.push(<title key="title">{headTags.title}</title>);
+			if (headTags.meta) {
+				if (headTags.meta.title){
+					tags.push(<meta key="og:title" property="og:title" content={headTags.meta.title} />);
+				}
+				if (headTags.meta.description){
+					tags.push(<meta key="description" name="description" content={headTags.meta.description} />);
+					tags.push(<meta key="og:description" property="og:description" content={headTags.meta.description} />);
+				}
+				if (headTags.meta.type) tags.push(<meta key="og:type" property="og:type" content={headTags.meta.type} />);
+				if (headTags.meta.url) tags.push(<meta key="og:url" property="og:url" content={headTags.meta.url} />);
+				if (headTags.meta.siteName) tags.push(<meta key="og:site_name" property="og:site_name" content={headTags.meta.siteName} />);
+				if (headTags.meta.image) tags.push(<meta key="og:image" property="og:image" content={headTags.meta.image} />);
+				if (headTags.meta.facebookAppId) tags.push(<meta key="fb:app_id" property="fb:app_id" content={headTags.meta.facebookAppId} />);
+				if (headTags.meta.twitterCard) tags.push(<meta key="twitter:card" property="twitter:card" content={headTags.meta.twitterCard} />);
+
+			}
+			return tags;
+		}
+		render() {
+			let tags = this.renderTags();
+			if(! tags) return null;
+			return ReactDOM.createPortal(
+				tags,
+				document.head
+			);
+		}
 	}
-	render() {
-		return ReactDOM.createPortal(
-			this.renderTags(),
-			document.head
-		);
-	}
-}
+));
+
 export class SlashrUiCalendar {
 	_monthKey = null;
 	constructor(slashrUi, idx, props) {

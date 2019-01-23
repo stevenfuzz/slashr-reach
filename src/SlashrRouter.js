@@ -1,6 +1,7 @@
 import { set as mobxSet, trace, decorate, observable} from "mobx";
 
 export class SlashrRouter{
+	_headTags = false;
 	constructor(slashr, options = {}){
 		this._slashr = slashr;
 		this._portals = {};
@@ -8,10 +9,10 @@ export class SlashrRouter{
 		this._location = null;
 		this._prevLocation = null;
 		this._isInitialized = false;
-		this._activePortalName = "default";
+		
 		this._isLoading = false;
 		
-		this._activeRouteName = null;
+		
 		this._route = null;
 		
 		this._uiState = {};
@@ -101,6 +102,25 @@ export class SlashrRouter{
 	handleLoaded(to, from){
 		if(! this._portals[to.portal]) return false;
 		return this._portals[to.portal].handleLoaded(to, from);
+	}
+	setHeadTags(headTags){
+		//console.log("SET HEAD TAGS FOR PORTAL:",this._activePortalName,JSON.stringify(headTags),JSON.stringify(this._portals[this._activePortalName].headTags));
+		if(! this._portals[this._activePortalName]) return false;
+		this._portals[this._activePortalName].headTags = headTags;
+	}
+	getHeadTags(){
+		return this._headTags;
+	}
+	set headTags(headTags){
+		this.setHeadTags(headTags);
+	}
+	get headTags(){
+		return this.getHeadTags();
+	}
+	updateHeadTags(){
+		if(! this._portals[this._activePortalName]) return false;
+		console.log("UPDATE HEAD TAGS",this._portals[this._activePortalName].headTags);
+		this._headTags = this._portals[this._activePortalName].headTags;
 	}
 	set loading(isLoading){
 		this._isLoading = isLoading;
@@ -323,6 +343,9 @@ export class SlashrRouter{
 		return this.portals[this.activePortalName].route;
 	}
 }
+decorate(SlashrRouter,{
+	_headTags: observable
+});
 
 class SlashrRoute{
 	constructor(slashr,routeData,routerPortalName, options = {}){
@@ -401,6 +424,7 @@ class SlashrRouterPortal{
 		this._onLoaded = props.onLoaded || null;
 		this._location = this.parseLocation();
 		this._isModal = props.modal ? true : false;
+		this._headTags = null;
 	}
 	parseLocation(){
 		let ret = null;
@@ -445,6 +469,7 @@ class SlashrRouterPortal{
 		this._hasLoaded = false;
 		this._uid = null;
 		this._renderUid = null;
+		this._headTags = null;
 	}
 	update(route){
 
@@ -570,6 +595,15 @@ class SlashrRouterPortal{
 	get route(){
 		return this._route;
 	}
+	get headTags(){
+		return this._headTags;
+	}
+	set headTags(tags){
+		this._headTags = tags;
+	}
+	resetHeadTags(){
+		this._headTags = false;
+	}
 }
 decorate(SlashrRouterPortal, {
 	// component: computed,
@@ -601,6 +635,9 @@ class SlashrAppRouter{
 	_createState(route, options){
 
 	}
+	setHeadTags(tags){
+		this._slashr.router.setHeadTags(tags);
+	}
 	_updateRoute(type, route, options = {}){
 		// Check for a pending push
 		if(this._updateTimeout){
@@ -628,9 +665,6 @@ class SlashrAppRouter{
 
 		let delay = options.delay || 0;
 		let state = this._slashr.router.createState(options);
-
-		console.log(state);
-
 		// Check if the next portal is modal
 		// If not, remove any modal portals
 		// console.log("ROUTER HISTORY STATA",portal, JSON.stringify(state._slashr.router.portals),state,route,this._slashr.router.location.pathname);
@@ -679,7 +713,7 @@ class SlashrAppRouter{
 				fn = this._slashr.router.history.replace;
 				break;
 		}
-		console.log(route,state,fn,delay);
+
 		if(! fn) return false;
 		if(delay) this._updateTimeout = setTimeout(()=>{
 			fn(route,state);

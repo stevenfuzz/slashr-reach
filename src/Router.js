@@ -3,7 +3,7 @@ import React from 'react';
 import { Provider, observer, inject } from 'mobx-react';
 //import './Main.css';
 import { Route, Switch, withRouter, matchPath, BrowserRouter} from 'react-router-dom';
-import { Dialog, Container} from './Slashr';
+import { Dialog, Container, HeadTags} from './Slashr';
 // import {Slashr} from 'slashr-react';
 
 // import IconButton from "../controls/IconButton";
@@ -189,15 +189,20 @@ export const _Router = inject("slashr")(observer(
 			// If not a current portal, but the portal has a route, reset it
 
 			// Update any portals that are loaded, but not in the request
+
 			for (let portal in this.props.slashr.router.portals) {
+				console.log(portal,currPortals,this.props.slashr.router.portals[portal].hasLoaded);
 				if (!currPortals[portal] && this.props.slashr.router.portals[portal].hasLoaded) {
 					this.props.slashr.router.portals[portal].reset();
 				}
 			}
 
+			if(hasMatch) this.props.slashr.router.portals[currPortalName].resetHeadTags();
+
 			this.props.slashr.router.loading = true;
 			try{
 				await Promise.all(promises);
+				this.props.slashr.router.loaded = true;
 			}
 			catch(err){
 				console.error("A router error has occurred:",err);
@@ -213,13 +218,13 @@ export const _Router = inject("slashr")(observer(
 			
 			// Update the routes
 			this.props.slashr.router.activePortalName = currPortalName;
-			this.route = this.app.router.route;
 
+			this.route = this.app.router.route;
 			this.prevRoute = prevRoute;
-			// this.currPortalName = currPortalName;
 
 			this.doUpdateScroll = true;
 
+			this.props.slashr.router.updateHeadTags();
 			this.handleScrollBehavoir();
 
 		}
@@ -280,7 +285,10 @@ export const _Router = inject("slashr")(observer(
 			let Layout = this.app.defaultLayout;
 			if (!Layout) throw ("TODO: Add slashr no layout");
 			return (
-				<Layout />
+				<React.Fragment>
+					<HeadTags />
+					<Layout />
+				</React.Fragment>
 			);
 		}
 	}));
@@ -454,7 +462,6 @@ export const RouteLink = inject("slashr")(observer(
 			this.routeProps = this.props.slashr.router.parseLinkProps(this.props);
 		}
 		get isMatch() {
-
 			// Check if it is a match with all portals		
 			for (let portal in this.props.slashr.router.portals) {
 				if(! this.props.slashr.router.portal(portal).hasRoute) continue;
