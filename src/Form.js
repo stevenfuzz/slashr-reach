@@ -842,15 +842,17 @@ export const Input = inject(["form"])(observer(
 				}
 				this.elmt.ref.current.style.height = (this.props.style && this.props.style.height) ? this.props.style.height : null;
 				if (this.elmt.ref.current.clientHeight !== this.elmt.ref.current.scrollHeight) {
+					console.log(this.elmt.ref.current.scrollHeight);
 					this.elmt.ref.current.style.height = `${this.elmt.ref.current.scrollHeight}px`;
 				}
+
 				this.autoSizeTimeout = false;
-			},10);
+			},5);
 		
 		}
-		handleOnChange(elmt, form, event) {
+		handleOnChange(event) {
 			if (this.elmt.autoSize) this.autoSize();
-			if (this.elmt._handleChange) this.elmt._handleChange(elmt, form, event);
+			if (this.elmt._handleChange) this.elmt._handleChange(event);
 		}
 		render() {
 			let nProps = {
@@ -867,6 +869,7 @@ export const Input = inject(["form"])(observer(
 				ref: this.elmt.ref,
 				className: this.elmt.className,
 				autoComplete: this.elmt.autoComplete,
+				rows: this.elmt.rows || 1
 			};
 
 			if (this.elmt.autoSize) {
@@ -1419,7 +1422,7 @@ export const Select = inject(["form"])(observer(
 				name: this.elmt.name,
 				type: this.elmt.type,
 				isClearable: this.elmt._props.clearable || null,
-				placeholder: this.elmt.placeholder,
+				placeholder: this.elmt.placeholder || false,
 				value: this.elmt._props.value,
 				onChange: this.elmt._handleChange,
 				onFocus: this.elmt._handleFocus,
@@ -1487,7 +1490,7 @@ export const AutoComplete = inject(["form"])(observer(
 			let nProps = {
 				name: this.elmt.name,
 				type: this.elmt.type,
-				placeholder: this.elmt.placeholder,
+				placeholder: this.elmt.placeholder || false,
 				value: this.elmt.value,
 				onChange: this.elmt._handleChange,
 				onFocus: this.elmt._handleFocus,
