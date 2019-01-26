@@ -119,7 +119,6 @@ export class SlashrRouter{
 	}
 	updateHeadTags(){
 		if(! this._portals[this._activePortalName]) return false;
-		console.log("UPDATE HEAD TAGS",this._portals[this._activePortalName].headTags);
 		this._headTags = this._portals[this._activePortalName].headTags;
 	}
 	set loading(isLoading){

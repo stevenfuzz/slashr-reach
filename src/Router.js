@@ -191,7 +191,6 @@ export const _Router = inject("slashr")(observer(
 			// Update any portals that are loaded, but not in the request
 
 			for (let portal in this.props.slashr.router.portals) {
-				console.log(portal,currPortals,this.props.slashr.router.portals[portal].hasLoaded);
 				if (!currPortals[portal] && this.props.slashr.router.portals[portal].hasLoaded) {
 					this.props.slashr.router.portals[portal].reset();
 				}

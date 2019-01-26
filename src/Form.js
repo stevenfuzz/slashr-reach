@@ -690,7 +690,7 @@ export class Form extends React.Component {
 	render() {
 		return (
 			<Provider form={this.form}>
-				<_Form elements={this.props.children} />
+				<_Form elements={this.props.children} {...this.props}/>
 			</Provider>
 		);
 	}
@@ -700,10 +700,12 @@ export const _Form = inject("form")(observer(
 	class _Form extends React.Component {
 		constructor(props) {
 			super(props);
+			console.log(props);
 		}
 		render() {
 			return (
 				<form 
+					className={this.props.className}
 					onFocus={this.props.form._onFocus}
 					onSubmit={this.props.form._handleSubmit} 
 					onReset={(this.props.form._onReset) ? this.props.form._handleReset : null}
@@ -876,10 +878,16 @@ export const Input = inject(["form"])(observer(
 			// 	nProps.ref = this.elmt.ref;
 			// }
 			let input = React.createElement(this.elmt.tag, nProps);
-			let className = "input-container";
+			let className = "input-container input";
+			let floatingLabel = this.props.floatingLabel ?
+				<Label className="floating" control={this.elmt.name}>{this.props.floatingLabel}</Label> :
+				null;
 			if (this.elmt.icon) className += " icon";
 			{this.elmt.icon}
-			if (!this.elmt.isHidden()) input = <div className={className}>{this.elmt.icon}{input}</div>
+			
+			if (!this.elmt.isHidden()) input = (
+				<div className={className}>{this.elmt.icon}{input}{floatingLabel}</div>
+			);
 
 			return input;
 		}
@@ -1422,10 +1430,14 @@ export const Select = inject(["form"])(observer(
 			};
 			let className = "input-container select";
 			if (this.elmt.icon) className += " icon";
+			let floatingLabel = this.props.floatingLabel ?
+				<Label className="floating" control={this.elmt.name}>{this.props.floatingLabel}</Label> :
+				null;
 			return (
 				<div className={className}>
 					{this.elmt.icon}
 					<ReactSelect {...nProps} />
+					{floatingLabel}
 				</div>
 			);
 		}
@@ -1491,11 +1503,14 @@ export const AutoComplete = inject(["form"])(observer(
 			};
 			let className = "input-container select";
 			if (this.elmt.icon) className += " icon";
-
+			let floatingLabel = this.props.floatingLabel ?
+			<Label className="floating" control={this.elmt.name}>{this.props.floatingLabel}</Label> :
+			null;
 			return (
 				<div className={className}>
 					{this.elmt.icon}
 					<ReactSelectAsync {...nProps} />
+					{floatingLabel}
 				</div>
 			);
 		}
@@ -1510,6 +1525,7 @@ export const DatePicker = inject(["form"])(observer(
 			this.getValue = this.getValue.bind(this);
 			this.setValue = this.setValue.bind(this);
 			this.updateValueByEvent = this.updateValueByEvent.bind(this);
+			this.inputRef = React.createRef();
 			// Make sure value is being sent
 			// So that this is a controlled component
 
@@ -1553,7 +1569,9 @@ export const DatePicker = inject(["form"])(observer(
 			return this.elmt._props.value || "";
 		}
 		componentDidMount() {
-
+			let input = this.inputRef.current.getInput();
+			input.addEventListener("focus", this.elmt._handleFocus);
+			input.addEventListener("blur", this.elmt._handleBlur);
 		}
 		render() {
 			let nProps = {
@@ -1562,8 +1580,11 @@ export const DatePicker = inject(["form"])(observer(
 				placeholder: this.elmt.placeholder,
 				value: this.elmt.value,
 				onDayChange: this.elmt._handleChange,
-				onFocus: this.elmt._handleFocus,
-				onBlur: this.elmt._handleBlur,
+				ref: this.inputRef,
+				//onFocus: this.elmt._handleFocus,
+				// input: <input class="test" />,
+				// onFocus: ()=>{alert("SLDKJF");},
+				// onBlur: this.elmt._handleBlur,
 				// formatDate: formatDate,
 				// parseDate: parseDate,
 				inputProps: {
@@ -1572,10 +1593,14 @@ export const DatePicker = inject(["form"])(observer(
 			};
 			let className = "input-container date";
 			if (this.elmt.icon) className += " icon";
+			let floatingLabel = this.props.floatingLabel ?
+			<Label className="floating" control={this.elmt.name}>{this.props.floatingLabel}</Label> :
+			null;
 			return (
 				<div className={className}>
 					{this.elmt.icon}
 					<DayPickerInput.default {...nProps} />
+					{floatingLabel}
 				</div>
 			);
 		}
@@ -1882,7 +1907,7 @@ export const Label = inject("form")(observer(
 		}
 		render() {
 			return (
-				<label htmlFor={this.props.htmlFor || this.props.control}>
+				<label htmlFor={this.props.htmlFor || this.props.control} className={this.props.className}>
 					{this.props.children}
 				</label>
 			);
