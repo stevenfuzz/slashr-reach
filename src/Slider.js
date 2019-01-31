@@ -21,11 +21,13 @@ export class SliderDomain {
 			ref: {
 				slider: React.createRef(),
 				sliderItems: React.createRef(),
-				sliderItemsWrapper: React.createRef()
+				sliderItemsWrapper: React.createRef(),
+				sliderItemsScroller: React.createRef()
 			},
 			size: {
 				height: null,
 				width: null,
+				scrollLeft: null,
 				scrollWidth: null
 			},
 			isScrollEnd: false,
@@ -44,13 +46,16 @@ export class SliderDomain {
 		};
 
 		this._stateProps = {
-			items: [],
+			// items: [],
 			// isLoaded: false,
 			animateSlider: {},
 			doShowControlRight: false,
 			doShowControlLeft: false,
-			doShow: false
+			doShow: false,
+			height: null
 		}
+
+		this._items = [];
 
 		// Map the props...
 		this.updateItems(props);
@@ -63,14 +68,13 @@ export class SliderDomain {
 		this._handleControlClickLeft = this._handleControlClickLeft.bind(this);
 		this._handleControlClickRight = this._handleControlClickRight.bind(this);
 	}
-	updateItems(props){
-		if(props.scrollToItem !== this.scrollToItem){
+	updateItems(props) {
+		if (props.scrollToItem !== this.scrollToItem) {
 			this.scrollToItem = props.scrollToItem;
 			this.updateScrollToItem = this.scrollToItem ? true : false;
 		}
-		let items = [];
-		if (props.items) items = this._stateProps.items = props.children;
-		else if (props.children) items = this._stateProps.items = props.children;
+		if (props.items) this._items = props.children;
+		else if (props.children) this._items = props.children;
 	}
 	// selectItem(item, doTriggerCallback = true){
 	// 	if(typeof item === 'string') this.activeItem = item;
@@ -80,17 +84,15 @@ export class SliderDomain {
 	// 	}
 	// 	if(this._onSelect && doTriggerCallback) this._onSelect(this.activeItem);
 	// }
-	handleMount(props){
+	handleMount(props) {
 		this.initialize(props);
 	}
-	handleUpdate(props){
+	handleUpdate(props) {
 		this.updateItems(props);
 		this.update(props);
 	}
 	// Must be called in componentDidMount
 	initialize(props) {
-		
-
 		// Add events to the controls
 		this._metadata.controlLeft = (this._metadata.controlLeft) ? React.cloneElement(this._metadata.controlLeft, {
 			onClick: this._handleControlClickLeft
@@ -109,61 +111,63 @@ export class SliderDomain {
 
 	update(props) {
 		//throw("THE GRID IS GETTING THE SIZE BEFORE IT IS REACTS TO MARKED AS LOADED.... Wait until inner div is visible to update size and show");
-		
+
+		// let nVals = {};
 		if (this._isUpdating) return;
-		if (!this.isLoaded){
+		if (!this.isLoaded) {
 			this._stateProps.doShow = false;
-			return;
 		}
-		if(! this._stateProps.doShow){
+		else if (!this._stateProps.doShow) {
 			this._stateProps.doShow = true;
-			return;
 		}
-		if(this.isRendered){
+		if (this.isRendered) {
 			this._isUpdating = true;
 			let size = this.getDimensions();
-			
+			this._metadata.size = size;
 			if (size) {
 				let hasScroll = (size.scrollWidth > size.width);
 				let isScrollStart = (size.scrollLeft == 0);
 				let isScrollEnd = ((size.scrollLeft + size.width) == size.scrollWidth);
-				let nVals = {
-					doShowControlLeft: (hasScroll && !isScrollStart),
-					doShowControlRight: (hasScroll && !isScrollEnd),
-				};
+				
+				this._stateProps.doShowControlLeft =  (hasScroll && !isScrollStart);
+				this._stateProps.doShowControlRight = (hasScroll && !isScrollEnd);
 
-			
-				if(this.updateScrollToItem && this.scrollToItem){
+				if (this.updateScrollToItem && this.scrollToItem) {
 					// Look for the active item idx
 					let itemIdx = 0;
-					for(let i = 0; i < this.items.length; i++){
-						if(this.items[i].props.name === this.scrollToItem){
+					for (let i = 0; i < this.items.length; i++) {
+						if (this.items[i].props.name === this.scrollToItem) {
 							itemIdx = i;
 							break;
 						}
 					}
-					if(itemIdx > 0) itemIdx--;
+					if (itemIdx > 0) itemIdx--;
 					let scrollLeft = itemIdx ? this.getItemScrollLeft(itemIdx) : 0;
-					if(scrollLeft !== size.scrollLeft){
-						nVals.animateSlider = {
+					if (scrollLeft !== size.scrollLeft) {
+						this._stateProps.animateSlider = {
 							scrollLeft: scrollLeft
 						};
 					}
 					this.updateScrollToItem = false;
 				}
-		
-				mobxSet(this._stateProps,nVals);
+				//mobxSet(this._stateProps, nVals);
 				// this._stateProps = { ...this._stateProps, ...nVals };
 				// this._stateProps.doShowControlLeft = (hasScroll && !isScrollStart);
 				// this._stateProps.doShowControlRight = (hasScroll && !isScrollEnd);
 				//console.log("willGRIP PROPS", this.isLoaded, toJS(this._stateProps));
-
 			}
-			this._metadata.size = size;
+			
+			this._stateProps.height = size.height;
 			this._isUpdating = false;
 		}
+		//console.log("END UPDATE FOR",this._metadata.name,JSON.stringify(this._stateProps));
+		// console.log("Compared props",JSON.stringify(this._stateProps),JSON.stringify(nVals));
+		// if(!Slashr.utils.core.arePropsEqual(this._stateProps, nVals)){
+		// 	console.log("SETTING PROPS");
+		// 	mobxSet(this._stateProps, nVals);
+		// }
 	}
-	
+
 	// Getters / Setters
 	get isScrollEnd() {
 		return this._metadata.isScrollEnd;
@@ -174,7 +178,7 @@ export class SliderDomain {
 	get isLoaded() {
 		return (this.items && this.items.length > 0);
 	}
-	get doShow(){
+	get doShow() {
 		return this._stateProps.doShow;
 	}
 	get isRendered() {
@@ -194,7 +198,7 @@ export class SliderDomain {
 	get isUpdating() {
 		return this._isUpdating;
 	}
-	
+
 	get hasScroll() {
 		return this._metadata.hasScroll;
 	}
@@ -205,10 +209,13 @@ export class SliderDomain {
 		return this._stateProps.doShowControlRight;
 	}
 	get items() {
-		return this._stateProps.items;
+		return this._items;
 	}
 	get size() {
 		return this._metadata.size;
+	}
+	get height(){
+		return this._stateProps.height;
 	}
 	get ref() {
 		return this._metadata.ref;
@@ -243,20 +250,20 @@ export class SliderDomain {
 		this._stateProps.animateSlider = values;
 		return this;
 	}
-	scrollToItem(idx){
+	scrollToItem(idx) {
 		let scrollLeft = this.getItemScrollLeft(idx);
-		if(scrollLeft !== this.size.scrollLeft){
+		if (scrollLeft !== this.size.scrollLeft) {
 			this.animateSlider = {
 				scrollLeft: scrollLeft
 			};
 		}
 	}
-	getItemScrollLeft(idx){
+	getItemScrollLeft(idx) {
 		let sliderItemsElmt = this._metadata.ref.sliderItems.current;
 		let children = [];
 		let scrollLeft = 0;
-		if(idx > 0){
-			if(sliderItemsElmt.children[idx]){
+		if (idx > 0) {
+			if (sliderItemsElmt.children[idx]) {
 				let item = sliderItemsElmt.children[idx];
 				scrollLeft = item.offsetLeft;
 			}
@@ -309,35 +316,37 @@ export class SliderDomain {
 			scrollLeft: scrollLeft
 		};
 	}
-	_handleTransition(state){
-		switch(state){
-			case"entering":
+	_handleTransition(state) {
+		switch (state) {
+			case "entering":
 				this.rendered = true;
 				this.update();
-			break;
+				break;
 		}
+		// console.log(state, this.getDimensions());
 	}
 
 	// Methods
 	getDimensions() {
 		if (!this.isLoaded) return false;
 		let sliderItemsElmt = this._metadata.ref.sliderItems.current;
+		let sliderItemsScrollerElmt = this._metadata.ref.sliderItemsScroller.current;
+		if(! sliderItemsElmt || ! sliderItemsScrollerElmt) return this.size;
 		// let sliderElmt = this._metadata.ref.slider.current;
-		// let sliderItemsWrapperElmt = this._metadata.ref.sliderItemsWrapper.current;
 		return {
 			height: sliderItemsElmt.clientHeight,
-			width: sliderItemsElmt.offsetWidth,
-			scrollLeft: sliderItemsElmt.scrollLeft,
-			scrollWidth: sliderItemsElmt.scrollWidth
+			width: sliderItemsScrollerElmt.offsetWidth,
+			scrollLeft: sliderItemsScrollerElmt.scrollLeft,
+			scrollWidth: sliderItemsScrollerElmt.scrollWidth
 		}
-
 	}
 	_updateHeight() {
 
 	}
 }
 decorate(SliderDomain, {
-	_stateProps: observable
+	_stateProps: observable,
+	update: action
 });
 
 export class Slider extends React.Component {
@@ -361,23 +370,24 @@ export const _Slider = inject("slider")(observer(
 	class _Slider extends React.Component {
 		constructor(props) {
 			super(props);
-			//this.handleTransition = this.handleTransition.bind(this);
+			this.handleObserveResize = this.handleObserveResize.bind(this);
 		}
 		componentDidMount() {
 			this.props.slider.handleMount(this.props);
 		}
-		componentDidUpdate(){
-			// console.log("slider componentDidUpdate", this.props.slider.isLoaded);
-			//this.props.slider.handleUpdate(this.props);
-			//console.log("Slider update",this.props.slider.ref.slider);
+		componentDidUpdate() {
+		
+		}
+		handleObserveResize(e) {
+			this.props.slider.handleUpdate(this.props);
 		}
 		componentWillReact() {
 			this.props.slider.handleUpdate(this.props);
 		}
 		render() {
 			let loader = (this.props.loader) ? this.props.loader : <Container>Loading...</Container>;
-			if(! this.props.slider.doShow) return null;
-			this.props.slider.rendered = true;
+			if (!this.props.slider.doShow) return null;
+			//this.props.slider.rendered = true;
 			return (
 				<Container
 					className="slider"
@@ -397,17 +407,22 @@ export const _Slider = inject("slider")(observer(
 					>
 						{this.props.children}
 					</Swipeable> */}
-					
+
 					<Container
 						hide
 						unmountOnHide
 						onTransition={this.props.slider._handleTransition}
 						transitionToggle={this.props.slider.doShow}
+						ref={this.props.slider.ref.sliderItemsWrapper}
+						animate={this.props.slider.animateSlider}
+						style={{
+							height: this.props.slider.height
+						}}
 						transition={{
 							easing: "easeInQuad",
 							enter: {
 								origin: "top left",
-								display:"block",
+								display: "block",
 								// opacity:0,
 								// transform:{
 								// 	translate: "10%",
@@ -433,27 +448,32 @@ export const _Slider = inject("slider")(observer(
 								// }
 							},
 							exited: {
-								display:"none",
+								display: "none",
 							}
 						}}
 						className="slider-items-wrapper"
-						ref={this.props.slider.ref.sliderItemsWrapper}
-						style={{
-							height: this.props.slider.size.height
-						}}
 					>
 						<Container
+							ref={this.props.slider.ref.sliderItemsScroller}
 							animate={this.props.slider.animateSlider}
 							scroll={{
 								x: "auto",
 								y: false,
 								emulateTouch: true
 							}}
-							ref={this.props.slider.ref.sliderItems}
-							className="slider-items"
+							style={{
+								paddingBottom: "16px"
+							}}
 							onScroll={this.props.slider._handleScroll}
+							className="slider-items-scroller"
 						>
-							{this.props.items}
+							<Container
+								ref={this.props.slider.ref.sliderItems}
+								className="slider-items"
+								onObserveResize={this.handleObserveResize}
+							>
+								{this.props.items}
+							</Container>
 						</Container>
 					</Container>
 					<Container

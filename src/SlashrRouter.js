@@ -1,7 +1,8 @@
-import { set as mobxSet, trace, decorate, observable} from "mobx";
+import { set as mobxSet, trace, decorate, observable, action} from "mobx";
 
 export class SlashrRouter{
 	_headTags = false;
+	_uid = null;
 	constructor(slashr, options = {}){
 		this._slashr = slashr;
 		this._portals = {};
@@ -78,7 +79,8 @@ export class SlashrRouter{
 	}
 	update(route){
 		if(! this._portals[route.portal]) return false;
-		return this._portals[route.portal].update(route);
+		let ret = this._portals[route.portal].update(route);
+		return ret;
 	}
 	render(name){
 		if(! this._portals[name]) return false;
@@ -187,6 +189,8 @@ export class SlashrRouter{
 		// return key;
 	}
 	updateUiState(name, state = {}){
+
+		console.log("UPDATE ui state",name,state);
 
 		if(this.isLoading) return false;
 
@@ -326,8 +330,17 @@ export class SlashrRouter{
 		return this._portals;
 	}
 	set activePortalName(activePortalName){
+		return this.setActivePortalName(activePortalName);
+	}
+	setActivePortalName(activePortalName){
 		this._activePortalName = activePortalName;
+		if(this._uid !== this._portals[activePortalName].uid){
+			this._uid = this._portals[activePortalName].uid;
+		} 
 		return this;
+	}
+	get uid(){
+		return this._uid;
 	}
 	get activePortalName(){
 		return this._activePortalName;
@@ -343,7 +356,10 @@ export class SlashrRouter{
 	}
 }
 decorate(SlashrRouter,{
-	_headTags: observable
+	_headTags: observable,
+	_uid: observable,
+	//_activePortalName: observable,
+	setActivePortalName: action
 });
 
 class SlashrRoute{
@@ -471,7 +487,6 @@ class SlashrRouterPortal{
 		this._headTags = null;
 	}
 	update(route){
-
 		this._route = route;
 		this._component = route.component;
 		this._location = null;
@@ -513,7 +528,8 @@ class SlashrRouterPortal{
 			}
 		}
 
-		let uid = (this._location) ? this._location.pathname + this._location.search : null;
+		let uid = (this._location) ? this._location.pathname + (this._location.search || "") : null;
+
 		if(uid !== this._uid){
 			this._uid = uid;
 		}
@@ -561,7 +577,7 @@ class SlashrRouterPortal{
 		return this._component;
 	}
 	get hasRoute(){
-		if(! this._uid) return false;
+		//if(! this._renderUid) return false;
 		return (this._location) ? true : false;
 	}
 	get location(){
@@ -607,7 +623,8 @@ class SlashrRouterPortal{
 decorate(SlashrRouterPortal, {
 	// component: computed,
 	_uid: observable,
-	_renderUid: observable
+	_renderUid: observable,
+	render: action
 });
 
 
@@ -619,7 +636,8 @@ decorate(SlashrRouterPortal, {
 // });
 
 class SlashrAppRouter{
-	constructor(slashr, options = {}){
+	constructor(slashr, app, options = {}){
+		this._app = app;
 		this._slashr = slashr;
 		this._updateTimeout = null;
 		// this._metadata = {
@@ -766,8 +784,8 @@ export class SlashrApp{
 		if(! options.routes) throw("Slashr Error: No Routes.");
 		//console.log("TODO: Put routes in router?");
 		this._metadata = {
-			model: new SlashrAppModel(options),
-			router: new SlashrAppRouter(slashr, options),
+			model: new SlashrAppModel(slashr, this, options),
+			router: new SlashrAppRouter(slashr, this, options),
 			config: options.config,
 			routes: options.routes,
 			defaultLayout: options.defaultLayout || null,
@@ -808,13 +826,20 @@ export class SlashrApp{
 }
 
 class SlashrAppModel{
-	constructor(options){
+	constructor(slashr, app, options){
 		if(! options.domain) throw("Slashr Error: No Domain.");
 		if(! options.ui) throw("Slashr Error: No Ui.");
+		this._app = app;
+		this._slashr = slashr;
 		this._metadata = {
 			domain: options.domain,
 			ui: options.ui
 		}
+
+		// Bind ui methods
+		// TODO: Add this to SlashrAppUiModel
+		this._metadata.ui.createGrid = this._createGrid.bind(this);
+		
 	}
 	get domain(){
 		return this._metadata.domain;
@@ -824,5 +849,15 @@ class SlashrAppModel{
 	}
 	get ui(){
 		return this._metadata.ui;
+	}
+	// Helper ui methods
+	_createGrid(name, options={}){
+		let props = options;
+		props.name = name;
+		props.slashr = this._slashr;
+		console.log(props);
+		// console.log(this._app.route);
+		//console.log(this._slashr.router.route.portal);
+		return this._slashr.ui.createGrid(props);
 	}
 }

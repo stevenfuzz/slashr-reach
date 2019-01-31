@@ -92,6 +92,7 @@ class SlashrController {
 	constructor(routerPortal, domain) {
 		this.result = this.rslt = new SlashrControllerActionResultFactory();
 		this._routerPortal = routerPortal;
+		console.log("Controller created with router portal", this._routerPortal);
 		// this._slashr = Slashr.getInstance();
 	}
 	get model() {
@@ -135,7 +136,6 @@ class SlashrDomain {
 	setState(values){
 		let memberStateProps = this.__slashrMemberStateProps ? this.__slashrMemberStateProps : {};
 		for(let name in values){
-			console.log();
 			if(name in memberStateProps) this[name] = values[name];
 			else if(this.__slashrDomainState) this.__slashrDomainState[name] = values[name];
 		}
@@ -833,7 +833,7 @@ class SlashrUiElement {
 			if (props.fadeToggle === true) this._metadata.ui.fadeIn(this);
 			else if (!this.isHidden) this._metadata.ui.fadeOut(this);
 		}
-		if ("transition" in props && "transitionToggle" in props) {
+		if (props.transition && "transitionToggle" in props) {
 			// let transitionToggle = (props.transitionToggle) ? true : false;
 			this._metadata.ui.transition(this, props.transitionToggle, props.transition);
 
@@ -1792,7 +1792,6 @@ export const _Menu = inject("slashr")(observer(
 			this.open();
 		}
 		open() {
-			console.log("menu", this.mnu);
 			this.mnu.open = true;
 			return true;
 		}
@@ -2059,9 +2058,7 @@ export class SlashrUiCalendar {
 		this.requestDayContent();
 	}
 	_loadIncDecMonth(val) {
-		console.log(this._month);
 		this._month.setMonth(this._month.getMonth() + val);
-		console.log(this._month);
 		this.initializeMonth();
 		this.load();
 	}
@@ -2334,7 +2331,6 @@ export const _Calendar = inject("slashr")(observer(
 
 export class SlashrUiGrid {
 	constructor(slashrUi, idx, props) {
-
 		this._metadata = {
 			ui: slashrUi,
 			idx: idx,
@@ -2349,10 +2345,16 @@ export class SlashrUiGrid {
 			eventHandlers: {},
 			updateLayoutTimeout: null
 		};
-
 		this.initialize(props);
 	}
+	updateProps(props){
+		// TODO: Test this, kind of hacky. Wrote for grid preloading
+		for(let prop in props){
+			if(prop in this._metadata) this._metadata[prop] = props[prop];
+		}
+	}
 	initialize(props, reset = false) {
+		console.log("INITIALIZE GRID",props);
 		this._slashr = props.slashr;
 		this._route = props.route;
 		this._router = this._slashr.router;
@@ -2389,8 +2391,15 @@ export class SlashrUiGrid {
 		this._metadata.initialPage = props.page || 1;
 		this._metadata.history = null;
 		this._metadata.initialScrollY = 0;
-		if (this._router.history && this._route && this._route.ui && this._route.ui.grid && this._route.ui.grid.grids[this.name]) {
 
+		if(this._router.history){
+			console.log("router history",JSON.stringify(this._router.history.location.state));
+		}
+
+		
+		console.log("init history",this._route, this._router.history);
+		if (this._router.history && this._route && this._route.ui && this._route.ui.grid && this._route.ui.grid.grids[this.name]) {
+			console.log("CHECK FOR GRID HISTORY");
 			switch (this._router.history.action) {
 				case "POP":
 					let historyState = this._route.ui.grid;
@@ -2400,13 +2409,10 @@ export class SlashrUiGrid {
 					break;
 			}
 		}
-		//alert("LSKDJF");
-
 		// if (props.history && props.location && props.location.state && props.location.state._slashr){
 		// 	let historyAction = props.history.action;
 		// 	switch (historyAction) {
 		// 		case "POP":
-		// 		alert("pop");
 		// 		throw("SLDKJF");
 		// 			if (props.location.state && props.location.state._slashrUiGrid) {
 		// 				throw("SLKDJF");
@@ -2450,7 +2456,7 @@ export class SlashrUiGrid {
 		}
 		catch(err){
 			// Probably unmounted before updating...
-			console.err("Grid update error",err);
+			console.error("Grid update error",err);
 		}
 	}
 	updateScrollHistory() {
@@ -2459,6 +2465,7 @@ export class SlashrUiGrid {
 	updateHistory() {
 		if (!this._route) return;
 		// Make sure the update is on the correct route.
+		
 		if (this._slashr.router.route.portal !== this._route.name) return;
 
 		let lastVisiblePage = 0;
@@ -2548,6 +2555,9 @@ export class SlashrUiGrid {
 	// 	return await this.loadPage(this.initialPage);
 	// }
 	async loadPage(startPage = 1, endPage = null) {
+		console.log("grid loadPage",startPage, endPage, this._metadata.pages);
+
+
 		if (!endPage) endPage = startPage;
 		//if (this._isLoaded) return false;
 
@@ -2568,6 +2578,7 @@ export class SlashrUiGrid {
 			if (endPage > this.lastPage) this._lastPage = endPage;
 			let itemPages = await this.itemLoader(startPage, endPage);
 
+			
 			//console.log("TODO: Update this so that masonary makes sense");
 			if (this.pagesPerSection === 1) {
 				let nItemPages = {};
@@ -2614,8 +2625,12 @@ export class SlashrUiGrid {
 	async load() {
 		let initialPage = (this.history) ? this.initialPage : 1;
 		let initialSection = this.getSectionByPage(initialPage);
-		if (!this.sectionExists(initialSection)) throw ("Grid Error: Initial section not found...");
-		this.sections[initialSection].load();
+		if (!this.sectionExists(initialSection)){
+			this.addSection(initialSection);
+			//throw ("Grid Error: Initial section not found...");
+		}
+		await this.sections[initialSection].load();
+		return true;
 	}
 	async loadNextPage() {
 		if (this.isLoadingNext) return false;
@@ -2726,7 +2741,7 @@ export class SlashrUiGrid {
 		}
 	}
 	addSection(section) {
-		this.sections[section] = new SlashrUiGridSection(this, section);
+		if(! this.sections[section]) this.sections[section] = new SlashrUiGridSection(this, section);
 		return this.sections[section];
 	}
 	sectionExists(section) {
@@ -2809,19 +2824,20 @@ export class SlashrUiGridSection {
 		}
 		this._stateVars.pages = statePages;
 	}
-	load() {
+	async load() {
 		if (!this._metadata.pageCount) {
 			let pages = this.grid.getPagesBySection(this.section);
+
 			// if(this.grid.isInitialized) throw("LSKDJFLKJDSLFKJSDFH");
 
 			// Load First Page
 			if (pages[0] === this.grid.initialPage || (this.section > 1 && this.previousLoaded)) {
 				// throw("SLDKJFLKSDJFLKSJDFH");
-				this.grid.loadPage(pages[0]);
+				await this.grid.loadPage(pages[0]);
 			}
 			else {
 				// throw("LSKDJFLKSDJFLKSJDF");
-				this.grid.loadPages(pages);
+				await this.grid.loadPages(pages);
 			}
 
 
@@ -3188,7 +3204,7 @@ export const _GridLoader = inject("slashr")(observer(
 		constructor(props) {
 			super(props);
 			this.grid = this.props.grid;
-			this.gridName = this.props.name;
+			// this.gridName = this.props.name;
 			this.handleWindowScroll = this.handleWindowScroll.bind(this);
 
 			// Set scroll restoration to manual
@@ -3221,10 +3237,15 @@ export const _GridLoader = inject("slashr")(observer(
 			}
 
 			// reset the layout
-			if (this.props.name !== this.grid.name) {
-				this.reset();
+			if (this.props.grid.idx !== this.grid.idx){
+				this.grid = this.props.grid;
 			}
-			else this.grid.updateLayout();
+			else if (this.props.grid.name !== this.grid.name) {
+				this.reset();
+				return;
+			}
+			
+			this.grid.updateLayout();
 
 
 			// if (this.grid.isInitialized) this.updateLayout();
@@ -3613,6 +3634,7 @@ export const Grid = inject("slashr")(observer(
 					>
 						<_GridLoader
 							{...this.props}
+							name={this.grid.name}
 							grid={this.grid}
 							sectionRenderer={this.sectionRenderer}
 							sectionSpacerRenderer={this.sectionSpacerRenderer}
@@ -3650,13 +3672,6 @@ export const MasonaryGrid = inject("slashr", "route")(observer(
 			this.handleLoadNextClick = this.handleLoadNextClick.bind(this);
 			this.sectionRenderer = this.sectionRenderer.bind(this);
 			this.layoutUpdater = this.layoutUpdater.bind(this);
-			this.grid = this.props.slashr.ui.createGrid({
-				...this.props, ...{
-					sectionRenderer: this.sectionRenderer,
-					layoutUpdater: this.layoutUpdater
-				}
-			});
-
 			this.ref = {
 				cntr: React.createRef(),
 				grid: React.createRef()
@@ -3664,19 +3679,30 @@ export const MasonaryGrid = inject("slashr", "route")(observer(
 
 			if (!props.itemRenderer) throw ("Masonary Grid Error: itemRenderer required.");
 
-			// this.name = this.props.name;
-
-			// this.handleClickOut = this.handleClickOut.bind(this);
 			this.initialize();
 		}
+		initializeGrid(){
+			let gridProps = {
+				...this.props, ...{
+					sectionRenderer: this.sectionRenderer,
+					layoutUpdater: this.layoutUpdater
+				}
+			};
+			if(this.props.grid){
+				this.grid = this.props.grid;
+				this.grid.updateProps(gridProps);
+			}
+			else this.grid = this.props.slashr.ui.createGrid(gridProps);
+		}
 		initialize() {
+			this.initializeGrid();
 			this.items = this.props.items || [];
 			this.minItemWidth = this.props.minItemWidth || 100;
 			this.itemRenderer = this.props.itemRenderer;
 
 			this.loadingIndicator = this.props.loadingIndicator || null;
 			this.sectionSpacerRenderer = this.props.sectionSpacerRenderer || null;
-			this.pagesPerSection = this.props.pagesPerSection || null;
+			this.pagesPerSection = this.grid.pagesPerSection;
 
 			//this.itemLoader = this.props.itemLoader || null;
 			this.page = this.grid.initalPage;
@@ -3807,7 +3833,12 @@ export const MasonaryGrid = inject("slashr", "route")(observer(
 			// if (this.grid.isInitialized) this.updateLayout();
 			//if(this.grid.isInitialized && this.hasRendered) this.updateLayout();
 
-			if (this.props.name !== this.grid.name) {
+			if(this.props.grid && this.props.grid.idx !== this.grid.idx){
+				this.grid.delete();
+				this.grid = this.props.grid;
+				this.initialize();
+			}
+			else if (this.props.name !== this.grid.name) {
 				this.initialize();
 			}
 
@@ -3858,12 +3889,14 @@ export const MasonaryGrid = inject("slashr", "route")(observer(
 						item: item
 					});
 				}
-				if (this.pagesPerSection && (page % this.pagesPerSection === 0)) {
+				
+				if (this.grid.pagesPerSection && (page % this.grid.pagesPerSection === 0)) {
 					hasSectionSpacers = true;
 					secItems.push(items);
 					items = [];
 				}
 			}
+			
 			if (items.length) {
 				secItems.push(items);
 			}
@@ -3966,6 +3999,7 @@ export const MasonaryGrid = inject("slashr", "route")(observer(
 						<_GridLoader
 							{...this.props}
 							grid={this.grid}
+							// name={this.grid.name}
 							sectionRenderer={this.sectionRenderer}
 							sectionSpacerRenderer={this.sectionSpacerRenderer}
 							loadingIndicator={this.loadingIndicator}

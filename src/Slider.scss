@@ -57,14 +57,14 @@
 	flex-wrap:nowrap;
 	// scroll-behavior: smooth;
 	-webkit-overflow-scrolling: touch;	
-	padding-bottom:36px;
+	
 }
 .slider-items::-webkit-scrollbar {
-	display: none;
+	// display: none;
 }
 .slider-items-wrapper{
 	overflow:hidden;
-	margin-bottom:-36px;
+	margin-bottom:-32px;
 }
 .slider-items,.slider-items *{
 	user-select:none;

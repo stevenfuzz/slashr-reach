@@ -8,6 +8,14 @@ import { _Router } from './Router';
 //import './Main.css';
 
 
+
+// import { library } from '@fortawesome/fontawesome-svg-core'
+// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+// import { faIgloo } from '@fortawesome/free-solid-svg-icons'
+
+// library.add(faIgloo)
+
+
 // import IconButton from "../controls/IconButton";
 // // import { Form, Input, Error, Success, Label, Errors, Field, TextArea, SubmitButton } from 'slashr-react';
 // // import { Post } from '../post/Post';

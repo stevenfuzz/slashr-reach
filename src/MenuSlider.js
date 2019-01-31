@@ -16,6 +16,10 @@ export class MenuSliderDomain{
 		this._slashr = Slashr.getInstance();
 		this._activeItem = props.activeItem || null;
 		this._scrollToItem = props.activeItem || null;
+		this._classNames = ["menu-slider"];
+		if(props.className){
+			this._classNames.push(props.className);
+		}
 		this._name = name;
 		this._activeClassName = props.activeClassName || null;
 		this._onSelect = props.onSelect || null;
@@ -30,6 +34,15 @@ export class MenuSliderDomain{
 		let item = new MenuSliderItemDomain(this, props);
 		this._items[props.name] = item;
 		return this._items[props.name]
+	}
+	updateItem(props){
+		// let item = {
+		// 	idx: this.nextItemIdx,
+		// 	ref: React.createRef(),
+		// 	isActive: false
+		// }
+		if(! this._items[props.name]) throw(`Menu Slider Item: Update error, Item name '${props.name}' not found.`);
+		return this._items[props.name].update(props);
 	}
 	selectItem(item){
 		this.scrollToItem = null;
@@ -50,6 +63,9 @@ export class MenuSliderDomain{
 	}
 	get activeClassName(){
 		return this._activeClassName;
+	}
+	get classNames(){
+		return this._classNames;
 	}
 	get activeItem(){
 		return this._activeItem;
@@ -73,15 +89,23 @@ decorate(MenuSliderDomain, {
 export class MenuSliderItemDomain{
 	constructor(menuSlider, props){
 		this._menuSlider = menuSlider;
-		this._name = props.name;
+		this._name = props.name;	
+		this.initialize(props);
+	}
+	initialize(props){
 		if(! this._menuSlider.activeItem) this._isSelected = props.active || false;
 		else this._isSelected = (props.name === this._menuSlider.activeItem);
+		this._className = props.className || null;
+	}
+	update(props){
+		return this.initialize(props);
 	}
 	get className(){
 		let className = "menu-slider-item";
 		if(this._menuSlider.activeClassName && this._isSelected){
 			className += ` ${this._menuSlider.activeClassName}`;
 		}
+		if(this._className) className += ` ${this._className}`;
 		return className;
 	}
 	get name(){
@@ -177,7 +201,7 @@ export const _MenuSlider = inject("menuSlider","slashr")(observer(
 			//alert(this.props.menuSlider.scrollToItem);
 			return(
 				<Container
-					className="menu-slider"
+					classNames={this.props.menuSlider.classNames}
 					// ref={this.props.slider.ref.slider}
 				>
 					<Slider 
@@ -204,6 +228,9 @@ export const MenuSliderItem = inject("menuSlider")(observer(
 		}
 		handleClick(e){
 			this.props.menuSlider.selectItem(this.item);
+		}
+		componentWillReact(){
+			this.props.menuSlider.updateItem(this.props);
 		}
 		render() {
 			return(

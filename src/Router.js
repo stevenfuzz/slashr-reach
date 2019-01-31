@@ -434,7 +434,7 @@ export const RouterPortal = inject("slashr")(observer(
 
 // export default Router;
 
-export const RouteLink = inject("slashr")(observer(
+export const RouteLink = inject("slashr","app")(observer(
 	class RouteLink extends React.Component {
 		constructor(props) {
 			super(props);
@@ -451,6 +451,9 @@ export const RouteLink = inject("slashr")(observer(
 		componentDidUpdate() {
 			
 		}
+		componentDidMount(){
+			
+		}
 		handleClick(e) {
 			e.preventDefault();
 			// e.stopPropagation();
@@ -465,6 +468,7 @@ export const RouteLink = inject("slashr")(observer(
 			for (let portal in this.props.slashr.router.portals) {
 				if(! this.props.slashr.router.portal(portal).hasRoute) continue;
 				if (!this.props.slashr.router.portals[portal].location) continue;
+				
 				let match = matchPath(this.props.slashr.router.portals[portal].location.pathname, this.routeProps.route);
 				
 				if (match && match.isExact) return true;
@@ -481,7 +485,9 @@ export const RouteLink = inject("slashr")(observer(
 			return classNames.length ? classNames.join(" ") : null;
 		}
 		render() {
-			//let uid = this.props.slashr.router.uid;
+			// Kind of a hacky way to get a reaction
+			let uid = this.props.slashr.router.uid;
+			//console.log("route route active protal",this.props.slashr.router.uid, this.isMatch);
 			return (
 				<a href={this.routeProps.route} className={this.className} style={this.props.style} onClick={this.handleClick}>{this.props.children}</a>
 			);

@@ -700,7 +700,6 @@ export const _Form = inject("form")(observer(
 	class _Form extends React.Component {
 		constructor(props) {
 			super(props);
-			console.log(props);
 		}
 		render() {
 			return (
@@ -971,7 +970,6 @@ export const ImageSelectArea = inject(["form"])(observer(
 			let style = {};
 			let imageSrc = (this.elmt.imageSrc || this.props.placeholderImageSrc)
 			if(imageSrc) style.backgroundImage = `url(${imageSrc})`;
-			console.log(this.props.imageRemoveButton);
 			let imageRemoveButton = React.cloneElement(this.props.imageRemoveButton, {
 				onClick: this.handleImageRemove
 			});
@@ -1707,7 +1705,6 @@ export const ToggleSwitch = inject(["form"])(observer(
 
 		}
 		updateValueByEvent(event) {
-			console.log("toggle value",event.target);
 			this.elmt._props.value = this.elmt._props.value = event.target.checked ? true : false;
 		}
 		setValue(value) {
@@ -1851,7 +1848,6 @@ export const Button = inject("form")(observer(
 	class Button extends React.Component {
 		constructor(props) {
 			super(props);
-			console.log(this.props);
 			this.elmt = this.props.form._addElement(this, {
 				props: {
 					//content: this.props.children,
