@@ -10,10 +10,10 @@ export class SlashrRouter{
 		this._location = null;
 		this._prevLocation = null;
 		this._isInitialized = false;
+		this._loadingPortalName = null;
+		
 		
 		this._isLoading = false;
-		
-		
 		this._route = null;
 		
 		this._uiState = {};
@@ -30,8 +30,19 @@ export class SlashrRouter{
 		this._location = options.location;
 		this._history = options.history;
 		//this._uiState = {};
+
+		this._computedHistoryAction = this._computedHistoryAction ? "POP" : "LOAD";
+
+		//this._computedHistoryAction === "pop" && 
+		let uiState = (options.location.state && options.location.state._slashr) ? options.location.state._slashr : {};
+		// console.log("CURR UI STATE",this._computedHistoryAction,JSON.stringify(uiState));
+		// if(uiState.ui && this.props.slashr.router.computedHistoryState !== "POP"){
+		// 	console.log("RESET RESET RESET ui state",JSON.stringify(uiState.ui));
+		// 	uiState.ui = {};
+		// }
+		this._uiState = uiState;
+		//console.log("init ui state from loc",JSON.stringify(this._uiState));
 		
-		this._uiState = (options.location.state && options.location.state._slashr) ? options.location.state._slashr : {};
 		//alert(this._uiState.router.portal);
 		this._activeRouteName = options.location.pathname;
 		this._activePortalName = (this._uiState.router && this._uiState.router.portal) ? this._uiState.router.portal : "default";
@@ -54,9 +65,10 @@ export class SlashrRouter{
 
 		let route = new SlashrRoute(this._slashr, routeData, routerPortalName, options);
 
-		// console.log("feed check controller",`../../controllers/${controllerName}Controller`,Controller);
-		// //console.log("feed look at this",Controller[`${controllerName}Controller`].prototype.defaultAction.toString());
-		let controller = new Controller(this.portal(routerPortalName));
+		// This will be a problem with children portals
+		this._loadingPortalName = routerPortalName;
+		
+		let controller = new Controller(this.portal(this._loadingPortalName));
 		//let controller = new Controller[`${controllerName}Controller`](this.props.domain);
 		let actionMethod = `${actionName}Action`;
 
@@ -68,6 +80,8 @@ export class SlashrRouter{
 
 		this.handleLoaded(route, this._route);
 
+		this._loadingPortalName = null;
+
 		this.update(route);
 
 		return route;
@@ -78,6 +92,7 @@ export class SlashrRouter{
 		return this._portals[name].hasRoute;
 	}
 	update(route){
+		this._route = route;
 		if(! this._portals[route.portal]) return false;
 		let ret = this._portals[route.portal].update(route);
 		return ret;
@@ -89,6 +104,12 @@ export class SlashrRouter{
 	reset(name){
 		if(! this._portals[name]) return false;
 		this._portals[name].reset();
+	}
+	get loadingPortalName(){
+		return this._loadingPortalName;
+	}
+	get computedHistoryAction(){
+		return this._computedHistoryAction;
 	}
 	portalExists(name){
 		return this._portals[name] ? true : false;
@@ -189,9 +210,7 @@ export class SlashrRouter{
 		// return key;
 	}
 	updateUiState(name, state = {}){
-
-		console.log("UPDATE ui state",name,state);
-
+		
 		if(this.isLoading) return false;
 
 		if(name !== this._activePortalName){
@@ -263,13 +282,7 @@ export class SlashrRouter{
 			}
 		}
 		if(doUpdateSession) sessionStorage.setItem(this.uiStateSessionKey,JSON.stringify(this._uiStateSession));
-		
-
-		// let sessKey = this.uiStateSessionKey;
-
-		// if(sessKey) sessionStorage.removeItem(sessKey);
-		// console.log("pushing ui state pushUiState",this._location.pathname,state);
-		
+	
 		this._slashr.router.history.replace({
 			pathname: this._location.pathname,
 			state: state,
@@ -682,12 +695,6 @@ class SlashrAppRouter{
 
 		let delay = options.delay || 0;
 		let state = this._slashr.router.createState(options);
-		// Check if the next portal is modal
-		// If not, remove any modal portals
-		// console.log("ROUTER HISTORY STATA",portal, JSON.stringify(state._slashr.router.portals),state,route,this._slashr.router.location.pathname);
-		// for(let currportal in state._slashr.router.portals){
-		// 	console.log("curr portal test...", currportal);
-		// }
 
 		// If changing routes for the new route, remove from state
 		let currRoute = this._slashr.router.location.pathname + (this._slashr.router.location.search || "");
@@ -706,20 +713,6 @@ class SlashrAppRouter{
 			}
 		}
 
-		//console.log("PUSH ROUTE");
-
-		// Check if new route should close modal layers
-
-		
-		// if(Object.keys(portals).length) routerState.portals = portals;
-
-		// let historyState = {
-		// 	_slashr: {
-		// 		router: routerState
-		// 	}
-		// };
-		
-		// console.log("router push to histoiry?",portal,state,this._slashr.router.location.pathname,this._slashr.router.location.state,route,historyState);
 		let fn = null;
 	
 		switch(type){
@@ -782,7 +775,6 @@ export class SlashrApp{
 	constructor(slashr, options){
 		if(! options.config) throw("Slashr Error: No Config.");
 		if(! options.routes) throw("Slashr Error: No Routes.");
-		//console.log("TODO: Put routes in router?");
 		this._metadata = {
 			model: new SlashrAppModel(slashr, this, options),
 			router: new SlashrAppRouter(slashr, this, options),
@@ -855,9 +847,6 @@ class SlashrAppModel{
 		let props = options;
 		props.name = name;
 		props.slashr = this._slashr;
-		console.log(props);
-		// console.log(this._app.route);
-		//console.log(this._slashr.router.route.portal);
 		return this._slashr.ui.createGrid(props);
 	}
 }

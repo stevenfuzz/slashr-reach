@@ -262,15 +262,14 @@ export const _Router = inject("slashr")(observer(
 			//TODO: Move this out of component?
 			if(this.app.scrollBehavior){
 				let uiState = this.props.slashr.router.getUiState(this.props.slashr.router.route.portal);
-				let scroll = (uiState && uiState.scroll) ? uiState.scroll : false;
+				let scroll = (uiState && uiState.scroll && this.props.slashr.router.computedHistoryAction === "POP") ? uiState.scroll : false;
 				let ret = this.app.scrollBehavior(this.route, this.prevRoute, scroll);
 				if(ret){
-					
 					// wait for the document to become big enough
-					let attempts = 0;
-					let scrollTimeout = setTimeout(()=>{
-						//window.scrollTo
-					},100);
+					// let attempts = 0;
+					// let scrollTimeout = setTimeout(()=>{
+					// 	//window.scrollTo
+					// },100);
 
 					// Check to see if it's ok to scroll
 					setTimeout(()=>{
@@ -322,7 +321,7 @@ export const RouterPortal = inject("slashr")(observer(
 					//route={this.props.slashr.router.portal(this.name)}
 						<Provider 
 							app={this.appContext} 
-							route={this.props.slashr.router.portal(this.name)}
+							portal={this.props.slashr.router.portal(this.name)}
 						>	
 							<Container
 								className="router-portal"
