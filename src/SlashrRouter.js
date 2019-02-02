@@ -309,6 +309,7 @@ export class SlashrRouter{
 			depth: this._history.length,
 			router: routerState
 		}
+
 		return state;
 	}
 	parseLinkProps(props) {
@@ -325,6 +326,7 @@ export class SlashrRouter{
 
 			if (props.to.portal) routeProps.portal = props.to.portal;
 			if(props.to.delay) routeProps.delay = props.to.delay;
+			if(props.to.state) routeProps.state = props.to.state;
 		}
 		else routeProps.route = props.to;
 		if (!routeProps.route) throw ("Route Link Error: No pathname.");
@@ -695,10 +697,14 @@ class SlashrAppRouter{
 
 		let delay = options.delay || 0;
 		let state = this._slashr.router.createState(options);
-
+		
 		// If changing routes for the new route, remove from state
 		let currRoute = this._slashr.router.location.pathname + (this._slashr.router.location.search || "");
 		
+		if(currRoute === route && type === "push"){
+			// Do not push the same route.
+			return;
+		}
 		// console.log("PUSH ROUTE",currRoute, route, portal, JSON.stringify(state._slashr.router.portals));
 
 		if(currRoute !== route && state._slashr.router.portals[portal]){

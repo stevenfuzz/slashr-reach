@@ -100,6 +100,12 @@ class SlashrController {
 	get mdl() {
 		return this.model;
 	}
+	get router() {
+		return Slashr.getInstance().router;
+	}
+	get rtr() {
+		return this.router;
+	}
 	get route() {
 		return {
 			portal: this._routerPortal.name
@@ -134,6 +140,7 @@ class SlashrDomain {
 	}
 	setState(values){
 		let memberStateProps = this.__slashrMemberStateProps ? this.__slashrMemberStateProps : {};
+		console.log("set state values",values);
 		for(let name in values){
 			if(name in memberStateProps) this[name] = values[name];
 			else if(this.__slashrDomainState) this.__slashrDomainState[name] = values[name];
@@ -554,6 +561,8 @@ class SlashrUiElement {
 		this._handleClickCapture = this._handleClickCapture.bind(this);
 		this._handleScroll = this._handleScroll.bind(this);
 		this._handleClick = this._handleClick.bind(this);
+		this._handleFocus = this._handleFocus.bind(this);
+		this._handleBlur = this._handleBlur.bind(this);
 		this._handlePointerDown = this._handlePointerDown.bind(this);
 		this._handleWindowResize = this._handleWindowResize.bind(this);
 		this._handleWindowScroll = this._handleWindowScroll.bind(this);
@@ -1222,6 +1231,12 @@ class SlashrUiElement {
 	_handleClick(e) {
 		if (this.props.onClick) this.props.onClick(e);
 	}
+	_handleBlur(e) {
+		if (this.props.onBlur) this.props.onBlur(e);
+	}
+	_handleFocus(e) {
+		if (this.props.onFocus) this.props.onFocus(e);
+	}
 	_handlePointerDown(e) {
 		if (this.props.onPointerDown) this.props.onPointerDown(e);
 	}
@@ -1311,6 +1326,8 @@ class SlashrUiElement {
 
 		if (this.props.onScroll) this._metadata.eventHandlers.onScroll = this._handleScroll;
 		if (this.props.onClick) this._metadata.eventHandlers.onClick = this._handleClick;
+		if (this.props.onBlur) this._metadata.eventHandlers.onBlur = this._handleBlur;
+		if (this.props.onFocus) this._metadata.eventHandlers.onFocus = this._handleFocus;
 		if (this.props.onPointerDown) this._metadata.eventHandlers.onPointerDown = this._handlePointerDown;
 	}
 	_removeEventListeners() {

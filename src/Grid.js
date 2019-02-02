@@ -6,8 +6,6 @@ import { Slashr, Container } from './Slashr'
 
 export class SlashrUiGrid {
 	constructor(slashrUi, idx, props) {
-
-        console.log("Create grid",props);
 		this._metadata = {
 			ui: slashrUi,
             idx: idx,
@@ -79,7 +77,7 @@ export class SlashrUiGrid {
 
         let router = this._slashr.router;
 
-        let historyState = null;
+		let historyState = null;
         if(! this._portal 
             && router.loadingPortalName 
             && router.computedHistoryAction
@@ -110,7 +108,7 @@ export class SlashrUiGrid {
 					historyState = this._portal.ui.grid;
 					break;
 			}
-        }
+		}
         if(historyState && historyState.grids[this.name]){
             this._metadata.history = historyState.grids[this.name];
             this._metadata.initialPage = historyState.grids[this.name].page;
@@ -173,8 +171,7 @@ export class SlashrUiGrid {
 	}
 	updateHistory() {
 		if (!this._portal) return;
-		// Make sure the update is on the correct route.
-		
+		// Make sure the update is on the correct portal.
 		if (this._slashr.router.route.portal !== this._portal.name) return;
 
 		let lastVisiblePage = 0;
@@ -267,17 +264,12 @@ export class SlashrUiGrid {
 			if (endPage > this.lastPage) this._lastPage = endPage;
             let itemPages = await this.itemLoader(startPage, endPage);
             
-            console.log("GOT ITEM PAGES",this.pagesPerSection,itemPages);
-
-			
 			//console.log("TODO: Update this so that masonary makes sense");
 			if (this.pagesPerSection === 1) {
 				let nItemPages = {};
 				nItemPages[startPage] = itemPages;
 				itemPages = nItemPages;
             }
-            
-            console.log("Putting pages together",this._metadata.pages,itemPages);
 
 			this._metadata.pages = { ...this._metadata.pages, ...itemPages };
 
@@ -288,8 +280,6 @@ export class SlashrUiGrid {
 			// See if the last loaded page resultrs mean grid loaded
 			if (!itemPages[endPage] || !itemPages[endPage].length
 				|| (this.resultsPerPage && this.resultsPerPage > itemPages[endPage].length)) {
-				//console.log("Loaded?",itemPages, endPage, this.resultsPerPage,  itemPages[endPage],itemPages[endPage].length);
-				// console.log("grid testset is loaded",this.resultsPerPage,itemPages[endPage].length);
 				this._isLoaded = true;
 			}
 
@@ -1111,7 +1101,7 @@ export const _GridLoader = inject("slashr")(observer(
 // 		);
 // 	}
 // }
-export const Grid = inject("slashr")(observer(
+export const Grid = inject("slashr","portal")(observer(
 	class Grid extends React.Component {
 		constructor(props) {
 			super(props);
@@ -1150,7 +1140,6 @@ export const Grid = inject("slashr")(observer(
                 this.grid = this.props.slashr.ui.createGrid(gridProps);
             }
 
-            console.log("created grid",this.grid);
 		}
 		initialize() {
 			this.initializeGrid();
@@ -1414,7 +1403,6 @@ export const MasonaryGrid = inject("slashr", "portal")(observer(
                 this.grid = this.props.slashr.ui.createGrid(gridProps);
             }
 
-            console.log("created grid",this.grid);
 		}
 		initialize() {
 			this.initializeGrid();
@@ -1496,31 +1484,6 @@ export const MasonaryGrid = inject("slashr", "portal")(observer(
 			//this.updateLayout();
 			// console.log("GRID LOADED PAGE ",this.page, this.name);
 		}
-		// updateLayout() {
-		// 	console.trace();
-		// 	console.log("in update layout");
-		// 	return true;
-
-		// 	// Update the number of items
-		// 	let nTotalItems = 0;
-		// 	for (let p in this.grid.pages) {
-		// 		nTotalItems += this.grid.pages[p].length;
-		// 	}
-		// 	// Calculate the columns based on width of container and item min width
-		// 	let nNumCols = Math.floor(this.ref.cntr.current.offsetWidth / this.minItemWidth) || 1;
-		// 	// If the resize changes doesn't change the col count, nothing changes
-		// 	// See if anything needs to be updates, if not, return
-		// 	if (nTotalItems === this.totalItems && nNumCols === this.numCols) return false;
-
-		// 	this.totalItems = nTotalItems;
-		// 	this.numCols = nNumCols
-		// 	console.log("grid update layouit", this.ref.cntr.current.offsetWidth, this.totalItems, this.numCols);
-		// 	//this.numRows = Math.ceil(this.totalItems / this.numCols);
-
-		// 	// this.grid.updateLayout();
-
-		// 	return true;
-		// }
 		layoutUpdater() {
 			if(! this.ref.cntr.current) return false;
 

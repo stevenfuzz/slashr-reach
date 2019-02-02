@@ -55,6 +55,26 @@ export const TextEditor = inject(["form"])(observer(
 			this.createEditorView = this.createEditorView.bind(this);
 			this.dispatchTransaction = this.dispatchTransaction.bind(this);
 			this.handleImageChange = this.handleImageChange.bind(this);
+			this.handleBlur = this.handleBlur.bind(this);
+			this.emptyPlugin = new Plugin({
+				props: {
+					decorations: state => {
+					const decorations = []
+			
+					const decorate = (node, pos) => {
+						if (node.type.isBlock && node.childCount === 0) {
+						decorations.push(
+							Decoration.node(pos, pos + node.nodeSize, {
+							class: 'empty',
+							})
+						)
+						}
+					}
+					state.doc.descendants(decorate)
+					return DecorationSet.create(state.doc, decorations)
+					},
+				},
+			});
 			this.placeholderPlugin = new Plugin({
 				state: {
 					init() { return DecorationSet.empty },
@@ -139,12 +159,27 @@ export const TextEditor = inject(["form"])(observer(
 					...listItem,
 					content: 'paragraph block*',
 					group: 'block'
-				}
-				// list_item: {
-				// 	...listItem,
-				// 	content: 'paragraph block*',
-				// 	group: 'block'
-				// }
+				},
+				// image : {
+					figure: {
+					  attrs: {src: {}},
+					  content: "inline*",
+					  parseDOM: [{
+						tag: "figure",
+						contentElement: "figcaption", // Helps the parser figure out where the child nodes are
+						getAttrs(dom) {
+						  let img = dom.querySelector("img")
+						  return {src: img && img.parentNode == dom ? img.src : ""}
+						}
+					  }],
+					  toDOM(node) {
+						console.log("TO DOM FIGURE");
+						return ["figure", ["img", {src: node.attrs.src}], ["figcaption", 0]]
+					  },
+					  draggable: true,
+					  group: "block",
+					}
+				//   }
 			};
 			let nodeOptions = {
 				...nodes,
@@ -288,7 +323,8 @@ export const TextEditor = inject(["form"])(observer(
 					dropCursor(),
 					gapCursor(),
 					history(),
-					this.placeholderPlugin
+					this.placeholderPlugin,
+					this.emptyPlugin
 				];
 				// if (options.menuBar !== false)
 				// 	{ plugins.push(prosemirrorMenu.menuBar({floating: options.floatingMenu !== false,
@@ -375,7 +411,7 @@ export const TextEditor = inject(["form"])(observer(
 
 			// Find and replace the placeholder image
 			let pos = this.findImagePlaceholder(state, id);
-			const img = this.elmt._props.editor.schema.nodes.image.create({
+			const img = this.elmt._props.editor.schema.nodes.figure.create({
 				src: url
 			});
 			tr.replaceWith(pos, pos, img);
@@ -399,6 +435,9 @@ export const TextEditor = inject(["form"])(observer(
 			// },1000);
 			// return;
 
+		}
+		handleBlur(e){
+			console.log(e);
 		}
 		componentDidMount() {
 			this.createEditorView();
@@ -497,12 +536,17 @@ export const TextEditor = inject(["form"])(observer(
 				className: this.elmt.className,
 				onFocus: this.elmt._handleFocus,
 				onBlur: this.elmt._handleBlur,
+				// onBlur: this._handleBlur,
 				ref: this.ref
 			};
+			let floatingLabel = this.props.floatingLabel ?
+				<Label className="floating" control={this.elmt.name}>{this.props.floatingLabel}</Label> :
+				null;
 			return (
 				<div className="input-container text-editor">
 					<TextEditorToolbar editor={this} items={items} />
-					<div {...nProps} />
+					<Container {...nProps} />
+					{floatingLabel}
 				</div>
 				
 			);
@@ -585,15 +629,14 @@ export const TextEditorLinkDialog = inject(["form"])(observer(
 				<Dialog
 					open={this.isOpen}
 					onClose={this.handleClose}
-					title="Add a Link"
+					// title="Add a Link"
 					{...this.props}
 				>
-					<Form name="textEditorLink" onSubmit={this.handleSubmit}>
+					<Form className="material" name="textEditorLink" onSubmit={this.handleSubmit}>
 						<Field control="href">
-							<Label control="href">Add a Link</Label>
 							<Input
 								name="href"
-								placeholder="Add a Link"
+								floatingLabel="Enter a Link"
 								required="Please enter a link."
 								validator="url"
 							/>
@@ -666,14 +709,16 @@ export const TextEditorToolbar = inject(["form"])(observer(
 			// bold, italic, link | h1, h2, quote | image, video, embed (?), Seperator
 			return (
 				<div className="toolbar">
-					{this.items.map((item, i) => (
-						<TextEditorToolbarItem key={i} item={item} editor={this.editor} toolbar={this} {...item} />
-					))}
-					{dialogs.length &&
-						<TextEditorDialog>
-							{dialogs}
-						</TextEditorDialog>
-					}
+					<div className="toolbar-controls">
+						{this.items.map((item, i) => (
+							<TextEditorToolbarItem key={i} item={item} editor={this.editor} toolbar={this} {...item} />
+						))}
+						{dialogs.length &&
+							<TextEditorDialog>
+								{dialogs}
+							</TextEditorDialog>
+						}
+					</div>
 				</div>
 			);
 		}
@@ -798,6 +843,7 @@ export const TextEditorToolbarItem = inject(["form"])(observer(
 				case "h1":
 				case "h2":
 				case "h3":
+				case "h4":
 					attrs.level = this.item.action.substring(1, 2);
 					type = this.editor.schema.nodes.heading;
 					updateActive = this.updateActiveWrap;
@@ -880,12 +926,14 @@ export const TextEditorToolbarItem = inject(["form"])(observer(
 			this.item.attributes = attrs;
 			this.item.command = command;
 			this.item.updateActive = updateActive;
+			
 			this.editor.focus();
 
 		}
 		run() {
 			let state = this.editor.elmt._props.editor.state;
 			this.item.command(this.editor.elmt._props.editor.state, this.editor.dispatchTransaction);
+			this.editor.focus();
 		}
 		// update(){
 		// 	console.log(this.item.action, this.item.command);
@@ -962,6 +1010,22 @@ export const TextEditorToolbarItem = inject(["form"])(observer(
 					e.preventDefault();
 				};
 				nProps.type = "button"
+			}
+			else if (tag === "label") {
+				nProps.onClick = (e) => {
+					e.stopPropagation();
+					// e.preventDefault();
+					// this.run();
+				};
+				nProps.onTouchStart = (e) => {
+					e.stopPropagation();
+					// e.preventDefault();
+				};
+				nProps.onMouseDown = (e) => {
+					e.stopPropagation();
+					e.preventDefault();
+				};
+				// nProps.type = "button"
 			}
 
 			return React.createElement(tag, nProps, this.props.content);
