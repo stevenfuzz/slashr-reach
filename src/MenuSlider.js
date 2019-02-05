@@ -1,5 +1,6 @@
 import React from 'react';
-import {Slashr, Container, Navigation, Scrollable} from './Slashr';
+import {Slashr} from './Slashr';
+import { Container } from './Element';
 import { Provider, observer, inject } from 'mobx-react';
 import { decorate, observable, action, computed, trace } from "mobx";
 
@@ -164,7 +165,6 @@ export const _MenuSlider = inject("menuSlider","slashr")(observer(
 			// }
 
 			// console.log("menu slider location",this.props.slashr.router.location.pathname,this.props.slashr.router.location.search);
-
 			if(this.props.activeItem !== this.props.menuSlider.activeItem){
 				this.props.menuSlider.activeItem = this.props.activeItem;
 				if(this.props.slashr.router.history.action && this.props.slashr.router.history.action === "POP"){

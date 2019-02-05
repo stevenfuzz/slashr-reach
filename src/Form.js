@@ -12,13 +12,9 @@ import './DayPicker.css'
 
 import { default as ReactSelect } from 'react-select';
 import { default as ReactSelectAsync } from 'react-select/lib/Async';
-import { Slashr, Container } from './Slashr';
+import { Slashr } from './Slashr';
+import { Container } from './Element';
 import {Mention, MentionsInput} from 'react-mentions';
-
-// import 'react-select/dist/react-select.css';
-
-export { TextEditor } from "./TextEditor";
-
 
 class FormDomain {
 	constructor(name, props = {}) {

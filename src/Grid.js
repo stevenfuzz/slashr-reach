@@ -2,7 +2,7 @@ import React from 'react';
 import { withRouter } from 'react-router-dom';
 import { observer, inject } from 'mobx-react';
 import {decorate, observable, action} from "mobx";
-import { Slashr, Container } from './Slashr'
+import { Slashr } from './Slashr';
 
 export class SlashrUiGrid {
 	constructor(slashrUi, idx, props) {
@@ -717,7 +717,7 @@ export const _GridSection = inject("slashr")(observer(
 		}
 	}
 ));
-export const _GridPage = withRouter(
+// export const _GridPage = withRouter(
 	class _GridPage extends React.Component {
 		constructor(props) {
 			super(props);
@@ -778,7 +778,7 @@ export const _GridPage = withRouter(
 			);
 		}
 	}
-);
+// );
 
 export const _GridSectionLoader = inject("slashr")(observer(
 	class _GridSectionLoader extends React.Component {

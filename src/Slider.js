@@ -1,5 +1,5 @@
 import React from 'react';
-import { Slashr, Container, Scrollable } from './Slashr';
+import { Container } from './Element';
 import { Provider, observer, inject } from 'mobx-react';
 import { set as mobxSet, toJS, decorate, observable, action, computed, trace } from "mobx";
 
@@ -69,6 +69,7 @@ export class SliderDomain {
 		this._handleControlClickRight = this._handleControlClickRight.bind(this);
 	}
 	updateItems(props) {
+		console.log("updateitems",props, props.scrollToItem, this.scrollToItem);
 		if (props.scrollToItem !== this.scrollToItem) {
 			this.scrollToItem = props.scrollToItem;
 			this.updateScrollToItem = this.scrollToItem ? true : false;
@@ -124,6 +125,7 @@ export class SliderDomain {
 			this._isUpdating = true;
 			let size = this.getDimensions();
 			this._metadata.size = size;
+
 			if (size) {
 				let hasScroll = (size.scrollWidth > size.width);
 				let isScrollStart = (size.scrollLeft == 0);
@@ -131,8 +133,9 @@ export class SliderDomain {
 				
 				this._stateProps.doShowControlLeft =  (hasScroll && !isScrollStart);
 				this._stateProps.doShowControlRight = (hasScroll && !isScrollEnd);
-
+				
 				if (this.updateScrollToItem && this.scrollToItem) {
+					console.log("update scroll item");
 					// Look for the active item idx
 					let itemIdx = 0;
 					for (let i = 0; i < this.items.length; i++) {

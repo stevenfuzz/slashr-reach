@@ -1,5 +1,6 @@
 import 'babel-polyfill';
 import './Slashr';
+// import { Slashr } from './Slashr';
 export * from './Slashr';
 export * from './Form';
 export * from './Grid';
@@ -7,5 +8,14 @@ export * from './Router';
 export * from './MenuSlider';
 export * from './Slider';
 export * from './api';
-export * from './App'
+export * from './App';
+export * from './Dialog';
+export * from './Element';
+export * from './Menu';
+export * from './Calendar';
+export * from './Document';
+export * from './BodyPortal';
+export * from './TextEditor';
+// export default Slashr;
+//export * from './Ui';
 export {observable,action} from "mobx";

@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, observer, inject } from 'mobx-react';
-import { decorate, observable, action, computed } from "mobx";
+// import { decorate, observable, action, computed } from "mobx";
 //import { CSSTransition } from 'react-transition-group';
 
 import { EditorState, Plugin } from "prosemirror-state"
@@ -11,17 +11,17 @@ import { Decoration, DecorationSet } from "prosemirror-view"
 import { nodes, schema, blockquote } from 'prosemirror-schema-basic'
 import { orderedList, bulletList, listItem } from 'prosemirror-schema-list'
 import { Schema, DOMParser } from "prosemirror-model"
-import { exampleSetup } from "prosemirror-example-setup"
+// import { exampleSetup } from "prosemirror-example-setup"
 import 'prosemirror-example-setup/style/style.css'
 
 import { toggleMark, wrapIn, lift, setBlockType, heading, prosemirrorCommands, baseKeymap, chainCommands, exitCode, joinUp, joinDown, selectParentNode } from 'prosemirror-commands'
 // import { stat } from 'fs';
-import { prosemirrorKeymap } from "prosemirror-keymap";
-import { prosemirrorHistory } from "prosemirror-history";
-import { prosemirrorState } from "prosemirror-state";
-import { prosemirrorDropcursor } from "prosemirror-dropcursor";
-import { prosemirrorGapcursor } from "prosemirror-gapcursor";
-import { prosemirrorMenu } from "prosemirror-menu";
+// import { prosemirrorKeymap } from "prosemirror-keymap";
+// import { prosemirrorHistory } from "prosemirror-history";
+// import { prosemirrorState } from "prosemirror-state";
+// import { prosemirrorDropcursor } from "prosemirror-dropcursor";
+// import { prosemirrorGapcursor } from "prosemirror-gapcursor";
+// import { prosemirrorMenu } from "prosemirror-menu";
 // import {wrapIn, setBlockType, chainCommands, toggleMark, exitCode,
 // 	joinUp, joinDown, lift, selectParentNode} from "prosemirror-commands"
 import { wrapInList, splitListItem, liftListItem, sinkListItem } from "prosemirror-schema-list"
@@ -35,13 +35,11 @@ import { keymap } from "prosemirror-keymap"
 import { history } from "prosemirror-history"
 import { dropCursor } from "prosemirror-dropcursor"
 import { gapCursor } from "prosemirror-gapcursor"
-import { menuBar } from "prosemirror-menu"
+// import { menuBar } from "prosemirror-menu"
 
-import {Slashr, Container, Dialog, DialogButtons, Button, Document} from './Slashr';
+import { Container, Button } from './Element';
+import {Dialog, DialogButtons} from './Dialog';
 import { Form, Input, SubmitButton, Error, Success, Label, Errors, Field, FieldGroup, Hidden, TextArea, File, Select, DatePicker, AutoComplete } from './Form';
-
-
-
 
 export const TextEditor = inject(["form"])(observer(
 	class TextEditor extends React.Component {
@@ -873,14 +871,14 @@ export const TextEditorToolbarItem = inject(["form"])(observer(
 								if ($from.path[i].type) {
 									if ($from.path[i].type === this.editor.schema.nodes.paragraph) {
 										nType = this.editor.schema.nodes.heading;
-										nAttrs.level = 1;
+										nAttrs.level = 2;
 										break;
 									}
 									else if ($from.path[i].type === this.editor.schema.nodes.heading) {
 										nType = this.editor.schema.nodes.heading;
 										let cLevel = ($from.path[i].attrs && $from.path[i].attrs.level) ? $from.path[i].attrs.level : 0;
 										cLevel++;
-										if (cLevel > 4) {
+										if (cLevel > 5) {
 											nType = this.editor.schema.nodes.paragraph;
 											nAttrs = null;
 										}
@@ -890,6 +888,7 @@ export const TextEditorToolbarItem = inject(["form"])(observer(
 
 								}
 							}
+							console.log(nAttrs);
 							if (nType) setBlockType(nType, nAttrs)(state, dispatch);
 						}
 					};
