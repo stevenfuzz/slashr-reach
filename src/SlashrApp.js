@@ -1,5 +1,6 @@
 import {Slashr} from './Slashr';
-import {DialogUiDomain} from './Dialog';
+import {SlashrUiDialogDomain} from './domains/SlashrUiDialogDomain';
+import {SlashrAppRouter} from './Router';
 
 export class SlashrApp{
 	constructor(options){
@@ -64,7 +65,7 @@ export class SlashrAppModel{
 			domain: options.domain,
 			ui: options.ui
 		}
-		this._metadata.ui.dialog = this._metadata.ui.dlg = new DialogUiDomain();
+		this._metadata.ui.dialog = this._metadata.ui.dlg = new SlashrUiDialogDomain();
 
 		// Bind ui methods
 		// TODO: Add this to SlashrAppUiModel

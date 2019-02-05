@@ -1,42 +1,7 @@
 import React from 'react';
+import ReactDom from 'react-dom';
 import { Slashr } from "./Slashr";
-import { set as mobxSet, trace, decorate, observable, action} from "mobx";
-
-export class SlashrUiMenu extends Slashr.Domain{
-	constructor(slashrUi, idx, props) {
-        super();
-		this._metadata = {
-			ui: slashrUi,
-			idx: idx,
-			props: {},
-			ref: props.forwardRef || React.createRef(),
-			eventHandlers: {},
-		};
-		this._stateVars = {
-			isOpen: props.open || false
-		}
-	}
-	delete() {
-		this._metadata.ui.deleteMenu(this.idx);
-	}
-	get isOpen() {
-		return this._stateVars.isOpen;
-	}
-	set isOpen(isOpen) {
-		this._stateVars.isOpen = isOpen;
-		return this;
-	}
-	set open(isOpen) {
-		this.isOpen = isOpen;
-	}
-	get open() {
-		return this.isOpen;
-	}
-}
-Slashr.listen(SlashrUiMenu, {
-	_stateVars: observable
-});
-
+import {Container} from './Element';
 
 export const Menu = React.forwardRef((props, ref) => {
 	return (
@@ -48,8 +13,6 @@ export const Menu = React.forwardRef((props, ref) => {
 		</_Menu>
 	);
 });
-
-
 // const _ContextMenu = inject("domain")(observer(
 // 	class FeedItem extends React.Component {
 // 		constructor(props) {

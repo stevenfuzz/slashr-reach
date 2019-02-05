@@ -10,6 +10,7 @@ export class App extends React.Component {
 		constructor(props){
             super(props);
             this.app = new SlashrApp(this.props);
+            console.log("SlashrInstance",this.app.slashrInstance);
 		}
 		render() {
             

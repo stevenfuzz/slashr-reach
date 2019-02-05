@@ -1,51 +1,8 @@
 import React from 'react';
 import {Slashr} from './Slashr';
-
-export class DialogUiDomain extends Slashr.Domain{
-    constructor() {
-        super();
-		console.log(this);
-    }
-    dialog(name){
-
-    }
-    open(name){
-
-    }
-}
-class DialogInstanceUiDomain extends Slashr.Domain{
-	constructor(slashrUi, idx, props) {
-        super();
-		this._metadata = {
-			ui: slashrUi,
-			idx: idx,
-			props: {},
-			ref: props.forwardRef || React.createRef(),
-			eventHandlers: {},
-		};
-		this.state = {
-			isOpen: props.open || false
-		};
-	}
-	delete() {
-		this._metadata.ui.deleteDialog(this.idx);
-	}
-	get isOpen() {
-		return this._metadata.state.isOpen;
-	}
-	set isOpen(isOpen) {
-		this.setState({
-			isOpen: isOpen
-		});
-		return this;
-	}
-	set open(isOpen) {
-		this.isOpen = isOpen;
-	}
-	get open() {
-		return this.isOpen;
-	}
-}
+import {BodyPortal} from './BodyPortal';
+import {Container} from './Element';
+import {RouterPortal} from './Router';
 
 export const Dialog = React.forwardRef((props, ref) => {
 	return (
@@ -62,7 +19,6 @@ export const _Dialog = Slashr.connect(
 	class _Dialog extends React.Component {
 		constructor(props) {
             super(props);
-            console.log(props);
 			this.handleClose = this.handleClose.bind(this);
 			this.dlg = this.props.slashr.ui.createDialog(props);
 			this.hasOpened = false;

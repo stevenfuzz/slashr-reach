@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { NavLink, withRouter } from 'react-router-dom';
 import { Provider, observer, inject } from 'mobx-react';
 import { set as mobxSet, trace, decorate, observable, action, computed, intercept, observe, onReactionError, toJS } from "mobx";
-import { SlashrRouter } from './Router';
+import { SlashrRouter } from './core/SlashrRouter';
 import {SlashrUi} from './Ui';
 import {SlashrUtils} from './Utils';
 import ResizeObserver from 'resize-observer-polyfill';
@@ -31,7 +31,7 @@ export class Slashr {
 			config: {},
 			app: null
 		};
-		this.ui = new SlashrUi();
+		this.ui = new SlashrUi(this);
 		this.utils = new SlashrUtils();
 		this.router = new SlashrRouter(this);
 	}
@@ -46,7 +46,7 @@ export class Slashr {
 	// };
 	// Connects commpontent as app observer
 	static connect(component) {
-		return inject("app")(observer(component));
+		return inject("app","slashr")(observer(component));
 	} 
 	// static get ui() {
 	// 	let slashr = Slashr.getInstance();
@@ -59,8 +59,8 @@ export class Slashr {
 	static get instance() {
 		return Slashr.getInstance();
 	}
-	static get Controller() {
-		return SlashrController;
+	static get Actions() {
+		return SlashrActions;
 	}
 	static get Domain() {
 		return SlashrDomain;
@@ -88,9 +88,9 @@ decorate(Slashr, {
 });
 
 
-class SlashrController {
+class SlashrActions {
 	constructor(routerPortal, domain) {
-		this.result = this.rslt = new SlashrControllerActionResultFactory();
+		this.result = this.rslt = new SlashrActionsResultFactory();
 		this._routerPortal = routerPortal;
 	}
 	get model() {
@@ -114,12 +114,12 @@ class SlashrController {
 		return this.route;
 	}
 }
-class SlashrControllerActionResultFactory {
+class SlashrActionsResultFactory {
 	component(component) {
-		return new SlashrControllerActionComponentResult(component);
+		return new SlashrActionsComponentResult(component);
 	}
 }
-class SlashrControllerActionComponentResult {
+class SlashrActionsComponentResult {
 	constructor(component) {
 		this._metadata = {
 			component: component
@@ -132,7 +132,7 @@ class SlashrControllerActionComponentResult {
 	}
 }
 
-export class SlashrDomain {
+export class SlashrDomain{
 	__slashrDomainState = null;
 	constructor() {
 

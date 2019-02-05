@@ -1,8 +1,14 @@
-import {SlashrUiElement} from './Element'
+import {SlashrUiElement} from './core/SlashrUiElement'
+import {SlashrUiDialog} from './core/SlashrUiDialog';
+import {SlashrUiGrid} from './core/SlashrUiGrid';
+import {SlashrUiMenu} from './core/SlashrUiMenu';
+import {SlashrAnimationQueue} from './Animator';
+// import {SlashrAnimationQueue} from './core/constants';
 import { set as mobxSet, trace, decorate, observable, action} from "mobx";
 
+
 export class SlashrUi {
-	constructor() {
+	constructor(slashr) {
 		this._metadata = {
 			elmts: {},
 			dlgs: {},
@@ -11,6 +17,7 @@ export class SlashrUi {
 			fms: {},
 			grids: {}
 		};
+		this._slashr = slashr;
 		this._elmtIdx = 0;
 		this._dlgIdx = 0;
 		this._gridIdx = 0;
@@ -25,7 +32,7 @@ export class SlashrUi {
 		this._handleObserveResize = this._handleObserveResize.bind(this);
 	}
 	get animationQueue() {
-		if (!this._metadata.animationQueue) this._metadata.animationQueue = new SlashrAnimationQueue();
+		if (!this._metadata.animationQueue) this._metadata.animationQueue = new SlashrAnimationQueue(this._slashr);
 		return this._metadata.animationQueue;
 	}
 	get nextElmtIdx() {
@@ -59,17 +66,17 @@ export class SlashrUi {
 		// if(! options.props) options = {
 		// 	props: options
 		// };
-		this.animationQueue.add(elmt, Slashr.ANIMATE, options);
+		this.animationQueue.add(elmt, this._slashr.ANIMATE, options);
 	}
 	fadeIn(elmt, options = {}) {
-		this.animationQueue.add(elmt, Slashr.FADE_IN, options);
+		this.animationQueue.add(elmt, this._slashr.FADE_IN, options);
 	}
 	fadeOut(elmt, options = {}) {
-		this.animationQueue.add(elmt, Slashr.FADE_OUT, options);
+		this.animationQueue.add(elmt, this._slashr.FADE_OUT, options);
 	}
 	transition(elmt, toggled, options = {}) {
 		options.toggled = toggled;
-		this.animationQueue.add(elmt, Slashr.TRANSITION, options);
+		this.animationQueue.add(elmt, this._slashr.TRANSITION, options);
 	}
 	createElement(props) {
 		////console.log("TODO: Only create elements that have specific props for performance");

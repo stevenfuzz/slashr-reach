@@ -1,6 +1,6 @@
 
-class SlashrAnimationQueue {
-	constructor() {
+export class SlashrAnimationQueue {
+	constructor(slashr) {
 		//console.log("TODO: Add support for css transitions.");
 		this._metadata = {
 			queue: {},
@@ -8,6 +8,7 @@ class SlashrAnimationQueue {
 			isRunning: false,
 			queueAddTimeout: null
 		}
+		this._slashr = slashr;
 		this.totalFrames = 0;
 	}
 	get isRunning() {
@@ -30,7 +31,7 @@ class SlashrAnimationQueue {
 			}
 		}
 		this._metadata.queueIdx++;
-		this._metadata.queue[this._metadata.queueIdx] = new SlashrAnimator(this._metadata.queueIdx, elmt, type, options);
+		this._metadata.queue[this._metadata.queueIdx] = new SlashrAnimator(this._slashr, this._metadata.queueIdx, elmt, type, options);
 		if (this._metadata.queueAddTimeout) return true;
 
 		// Pause for a shor time to allow multiple animation calls to be queued
@@ -62,7 +63,7 @@ class SlashrAnimationQueue {
 		// if (this._metadata.isComplete) {
 		// 	if (this._metadata.queue) {
 		// 		// TODO: Should this work like this?
-		// 		//Slashr.getInstance().portal._nextElementQueue(this._metadata.eIdx, this._metadata.queue);
+		// 		//this._slashr.getInstance().portal._nextElementQueue(this._metadata.eIdx, this._metadata.queue);
 		// 	}
 		// 	return;
 		// }
@@ -82,8 +83,9 @@ class SlashrAnimationQueue {
 }
 
 export class SlashrAnimator {
-	constructor(idx, elmt, type, options) {
+	constructor(slashr, idx, elmt, type, options) {
 		options = (!options) ? {} : options;
+		this._slashr = slashr;
 		// Get the default options
 		// Remove defaults from options
 		// if("duration" in options) delete options.duration;
@@ -109,16 +111,17 @@ export class SlashrAnimator {
 			queue: (options.queue) ? options.queue : false,
 			options: options
 		};
+		
 
 		switch (type) {
-			// case Slashr.ROTATE:
+			// case this._slashr.ROTATE:
 			// 	this._metadata.angle = options.angle;
 			// 	this._metadata.startAngle = 0;
 			// 	this._metadata.currAngle = 0;
 
 
-			// 	var tr = Slashr.utils.dom.getComputedStyle(this._metadata.node, "transform");
-			// 	// var trInfo = Slashr.utils.dom.getTransformInfo(this._metadata.node);
+			// 	var tr = this._slashr.utils.dom.getComputedStyle(this._metadata.node, "transform");
+			// 	// var trInfo = this._slashr.utils.dom.getTransformInfo(this._metadata.node);
 
 			// 	if (tr !== false) {
 			// 		var values = tr.split('(')[1];
@@ -140,16 +143,16 @@ export class SlashrAnimator {
 			// 	}
 
 			// 	break;
-			// case Slashr.REPLACE_CLASS:
+			// case this._slashr.REPLACE_CLASS:
 			// 	this._metadata.newClass = options.newClass;
 			// 	this._metadata.oldClass = options.oldClass;
 			// 	this._metadata.isCssTransition = true;
 			// 	break;
-			// case Slashr.FADE_TO:
+			// case this._slashr.FADE_TO:
 			// 	this._metadata.fromOpacity = parseFloat(window.getComputedStyle(this._metadata.node, null).opacity || 1);
 			// 	this._metadata.toOpacity = parseFloat(options.opacity);
 			// 	break;
-			case Slashr.TRANSITION:
+			case this._slashr.TRANSITION:
 				let fromStyle = null;
 				let toStyle = null;
 				let toggled = options.toggled;
@@ -181,7 +184,7 @@ export class SlashrAnimator {
 
 				this._initAnimateProps(fromStyle, toStyle);
 				break;
-			case Slashr.ANIMATE:
+			case this._slashr.ANIMATE:
 				if (options.to && options.from) {
 					this.elmt.addStyle(options.from);
 					this._initAnimateProps(options.from, options.to);
@@ -248,7 +251,7 @@ export class SlashrAnimator {
 			for (let p in props) {
 				if (p === "duration" || p === "queue" || p === "easing" || p === "value" || p === "isInitial") continue;
 
-				let unit = Slashr.utils.dom.getPropertyUnitByValue(props[p]);
+				let unit = this._slashr.utils.dom.getPropertyUnitByValue(props[p]);
 				this._metadata.props[p] = {
 					unit: unit
 				};
@@ -278,19 +281,19 @@ export class SlashrAnimator {
 						elmtVal = fromStyle[p];
 					}
 
-					let elmtUnit = unit = Slashr.utils.dom.getPropertyUnitByValue(elmtVal);
+					let elmtUnit = unit = this._slashr.utils.dom.getPropertyUnitByValue(elmtVal);
 
 
 					if (unit !== elmtUnit) throw (`Element Error: Unable to animate element prop ${p}, unit mismatch`);
 
-					this._metadata.props[p].to = (unit) ? Slashr.utils.dom.stripPropertyValueUnit(props[p]) : props[p];
-					this._metadata.props[p].from = (unit) ? Slashr.utils.dom.stripPropertyValueUnit(elmtVal) : elmtVal;
+					this._metadata.props[p].to = (unit) ? this._slashr.utils.dom.stripPropertyValueUnit(props[p]) : props[p];
+					this._metadata.props[p].from = (unit) ? this._slashr.utils.dom.stripPropertyValueUnit(elmtVal) : elmtVal;
 
 
 
 					// Calculate from calculateStyles, Depreciated...
-					// this._metadata.props[p].from = Slashr.utils.dom.getPropertyValueByUnit(unit, this._metadata.node, p),
-					// this._metadata.props[p].to = Slashr.utils.dom.stripPropertyValueUnit(props[p]);
+					// this._metadata.props[p].from = this._slashr.utils.dom.getPropertyValueByUnit(unit, this._metadata.node, p),
+					// this._metadata.props[p].to = this._slashr.utils.dom.stripPropertyValueUnit(props[p]);
 				}
 				this._metadata.props[p].range = Math.abs(this._metadata.props[p].to - this._metadata.props[p].from);
 			}
@@ -358,10 +361,10 @@ export class SlashrAnimator {
 		let pct = (this._metadata.isComplete) ? 1 : this.calculateEase(this._metadata.easing, t);
 
 		switch (this._metadata.type) {
-			case Slashr.ANIMATE:
+			case this._slashr.ANIMATE:
 				this._animateProps(pct);
 				break;
-			case Slashr.FADE_IN:
+			case this._slashr.FADE_IN:
 				this._metadata.isInitialized = true;
 				tStyle.opacity = pct;
 				if (this._metadata.isComplete) {
@@ -373,7 +376,7 @@ export class SlashrAnimator {
 				}
 				this._metadata.elmt.addStyle(tStyle);
 				break;
-			case Slashr.FADE_OUT:
+			case this._slashr.FADE_OUT:
 				this._metadata.isInitialized = true;
 				tStyle.opacity = 1.0 - (pct);
 				if (this._metadata.isComplete) {
@@ -387,7 +390,7 @@ export class SlashrAnimator {
 				}
 				this._metadata.elmt.addStyle(tStyle);
 				break;
-			case Slashr.TRANSITION:
+			case this._slashr.TRANSITION:
 				this._metadata.isInitialized = true;
 				// tStyle.opacity = pct;
 
@@ -417,7 +420,7 @@ export class SlashrAnimator {
 				}
 
 				break;
-			// case Slashr.FADE_OUT:
+			// case this._slashr.FADE_OUT:
 			// 	this._metadata.isInitialized = true;
 			// 	tStyle.opacity = 1.0 - (pct);
 			// 	if (this._metadata.isComplete) {
@@ -426,7 +429,7 @@ export class SlashrAnimator {
 			// 	}
 			// 	this._metadata.node.style.opacity = tStyle.opacity;
 			// 	break;
-			// case Slashr.FADE_TO:
+			// case this._slashr.FADE_TO:
 			// 	this._metadata.isInitialized = true;
 			// 	let currOpacity = window.getComputedStyle(this._metadata.node, null).opacity;
 			// 	if (this._metadata.toOpacity == this._metadata.fromOpacity) {
@@ -446,23 +449,23 @@ export class SlashrAnimator {
 			// 	}
 			// 	this._metadata.node.style.opacity = tStyle.opacity;
 			// 	break;
-			// case Slashr.ROTATE:
+			// case this._slashr.ROTATE:
 			// 	let step = this._metadata.range * pct;
 			// 	let nAngle = this._metadata.currAngle + step;
 			// 	if (this._metadata.isComplete) nAngle = this._metadata.angle;
 			// 	this._metadata.node.style.transform = "rotate(" + nAngle + "deg)";
 			// 	break;
-			// case Slashr.SCROLL_TO:
+			// case this._slashr.SCROLL_TO:
 			// 	throw ("SDLKFJFH");
 			// 	// let step = this._metadata.range * pct;
 			// 	// let nAngle = this._metadata.currAngle + step;
 			// 	// if(this._metadata.isComplete) nAngle = this._metadata.angle;
 			// 	// this._metadata.node.style.transform = "rotate("+nAngle+"deg)";
 			// 	break;
-			// case Slashr.DELAY:
+			// case this._slashr.DELAY:
 			// 	// Wait for complete
 			// 	break;
-			// case Slashr.REPLACE_CLASS:
+			// case this._slashr.REPLACE_CLASS:
 			// 	throw ("TODO ADD REPLACE CLASS ANIMATION??");
 			// 	console.log(this._metadata.node.style.transition);
 			// 	if (this._metadata.node.style.transition) this._metadata.node.style.transition += ",all " + this._metadata.duration + "ms ease";

@@ -1,0 +1,1 @@
+export const Slashr = window._slashr || null;

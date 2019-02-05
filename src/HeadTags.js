@@ -1,5 +1,7 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import { observer, inject } from 'mobx-react';
+
 export const HeadTags = inject("slashr")(observer(
 	class HeadTags extends React.Component {
 		constructor(props) {
