@@ -1,4 +1,5 @@
 import React from 'react';
+import {Container} from './Element'
 
 class prosemirrorParser {
 	constructor(document) {
@@ -108,11 +109,11 @@ export const Document = React.forwardRef((props, ref) => {
 	let docParser = new prosemirrorParser(props.document);
 	let document = docParser.toComponents();
 	return (
-		<Element
+		<Container
 			{...props}
 			forwardRef={ref}
 		>
 			{document}
-		</Element>
+		</Container>
 	);
 });

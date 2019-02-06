@@ -7,6 +7,7 @@ import { SlashrRouter } from './core/SlashrRouter';
 import {SlashrUi} from './Ui';
 import {SlashrUtils} from './Utils';
 import ResizeObserver from 'resize-observer-polyfill';
+
 // import { throws } from 'assert';
 // import { parse } from 'url';
 
@@ -157,7 +158,6 @@ export class SlashrDomain{
 	}
 	setState(values){
 		let memberStateProps = this.__slashrMemberStateProps ? this.__slashrMemberStateProps : {};
-		console.log("set state values",values);
 		for(let name in values){
 			if(name in memberStateProps) this[name] = values[name];
 			else if(this.__slashrDomainState) this.__slashrDomainState[name] = values[name];

@@ -65,7 +65,7 @@ export class SlashrAppModel{
 			domain: options.domain,
 			ui: options.ui
 		}
-		this._metadata.ui.dialog = this._metadata.ui.dlg = new SlashrUiDialogDomain();
+		this._metadata.ui.dialog = this._metadata.ui.dlg = new SlashrUiDialogDomain(slashr);
 
 		// Bind ui methods
 		// TODO: Add this to SlashrAppUiModel

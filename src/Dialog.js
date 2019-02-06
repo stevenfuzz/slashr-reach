@@ -47,12 +47,13 @@ export const _Dialog = Slashr.connect(
 			if (this.props.shouldClose && this.props.shouldClose() === false) {
 				return false;
 			}
-			this.dlg.open = false;
+			// setting closed
+			this.dlg.close();
 			return true;
 		}
 		componentDidUpdate(prevProps, prevState, snapshot) {
-			if (this.props.open !== prevProps.open) this.dlg.open = this.props.open;
-			if (this.dlg.open) {
+			if (this.props.open !== prevProps.open) this.dlg.isOpen = this.props.open;
+			if (this.dlg.isOpen) {
 				if (!this.hasOpened) {
 					this.hasOpened = true;
 					this.onOpen();
@@ -85,6 +86,15 @@ export const _Dialog = Slashr.connect(
 				});
 			}
 			let titleBar = (this.props.title) ? <h2>{this.props.title}</h2> : null;
+			let content = this.props.children;
+			if(this.props.component){
+				let Component = this.props.component;
+				content = (
+					<Component 
+						isDialog
+					/>
+				);
+			}
 			return (
 				<BodyPortal>
 					<Container
@@ -103,7 +113,7 @@ export const _Dialog = Slashr.connect(
 							{...this.dialogProps}
 							ref={this.props.forwardRef}
 						>	{titleBar}
-							{this.props.component || this.props.children}
+							{content}
 						</Container>
 					</Container>
 				</BodyPortal>
@@ -112,13 +122,13 @@ export const _Dialog = Slashr.connect(
 	}
 );
 export const DialogButtons = React.forwardRef((props, ref) => (
-	<Element
+	<Container
 		{...props}
 		className={props.className || "dialog-buttons"}
 		ref={ref}
 	>
 		{props.children}
-	</Element>
+	</Container>
 ));
 
 export const RouteDialog = Slashr.connect(

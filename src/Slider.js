@@ -69,7 +69,6 @@ export class SliderDomain {
 		this._handleControlClickRight = this._handleControlClickRight.bind(this);
 	}
 	updateItems(props) {
-		console.log("updateitems",props, props.scrollToItem, this.scrollToItem);
 		if (props.scrollToItem !== this.scrollToItem) {
 			this.scrollToItem = props.scrollToItem;
 			this.updateScrollToItem = this.scrollToItem ? true : false;

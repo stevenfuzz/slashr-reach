@@ -3,6 +3,7 @@ import {SlashrUiDialog} from './core/SlashrUiDialog';
 import {SlashrUiGrid} from './core/SlashrUiGrid';
 import {SlashrUiMenu} from './core/SlashrUiMenu';
 import {SlashrAnimationQueue} from './Animator';
+import {ANIMATE, FADE_IN, FADE_OUT, TRANSITION} from './core/SlashrConstants'
 // import {SlashrAnimationQueue} from './core/constants';
 import { set as mobxSet, trace, decorate, observable, action} from "mobx";
 
@@ -66,21 +67,19 @@ export class SlashrUi {
 		// if(! options.props) options = {
 		// 	props: options
 		// };
-		this.animationQueue.add(elmt, this._slashr.ANIMATE, options);
+		this.animationQueue.add(elmt, ANIMATE, options);
 	}
 	fadeIn(elmt, options = {}) {
-		this.animationQueue.add(elmt, this._slashr.FADE_IN, options);
+		this.animationQueue.add(elmt, FADE_IN, options);
 	}
 	fadeOut(elmt, options = {}) {
-		this.animationQueue.add(elmt, this._slashr.FADE_OUT, options);
+		this.animationQueue.add(elmt, FADE_OUT, options);
 	}
 	transition(elmt, toggled, options = {}) {
 		options.toggled = toggled;
-		this.animationQueue.add(elmt, this._slashr.TRANSITION, options);
+		this.animationQueue.add(elmt, TRANSITION, options);
 	}
 	createElement(props) {
-		////console.log("TODO: Only create elements that have specific props for performance");
-		//console.log(props);
 		let idx = this.nextElmtIdx;
 		let elmt = new SlashrUiElement(this, idx, props);
 		this._metadata.elmts[idx] = elmt;
@@ -91,10 +90,14 @@ export class SlashrUi {
 		return this;
 	}
 	createDialog(props) {
-		let idx = this.nextDlgIdx;
+		let idx = props.name || this.nextDlgIdx;
+		if (this._metadata.dlgs[idx]) throw (`Dialog ${idx} already exists.`);
 		let elmt = new SlashrUiDialog(this, idx, props);
 		this._metadata.dlgs[idx] = elmt;
 		return elmt;
+	}
+	getDialog(idx){
+		return this._metadata.dlgs[idx] || false;
 	}
 	deleteDialog(idx) {
 		if (this._metadata.dlgs[idx]) delete this._metadata.dlgs[idx];
@@ -124,6 +127,7 @@ export class SlashrUi {
 	}
 	createGrid(props) {
 		let idx = props.name || this.nextGridIdx;
+		console.log("Grid Keys",Object.keys(this._metadata.grid));
 		if (this._metadata.grids[idx]) throw (`Grid ${idx} already exists.`);
 		let elmt = new SlashrUiGrid(this, idx, props);
 		this._metadata.grids[idx] = elmt;

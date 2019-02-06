@@ -1,0 +1,12 @@
+export const ANIMATE = "animate";
+export const FADE_IN = "fadeIn";
+export const FADE_OUT = "fadeOut";
+export const FADE_TO = "fadeTo";
+export const TRANSITION = "transition";
+export const ROTATE = "rotate";
+export const DELAY = "delay";
+export const SCROLL_TO = "scrollTo";
+export const REPLACE_CLASS = "replaceClass";
+export const EASE_IN = "easeIn";
+export const EASE_OUT = "easeOut";
+export const EASE_IN_OUT = "easeInOut";

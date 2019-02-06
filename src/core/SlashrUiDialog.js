@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { toJS, decorate, observable } from "mobx";
+import { toJS, decorate, observable, action } from "mobx";
 export class SlashrUiDialog{
 	_isOpen = false;
 	constructor(slashrUi, idx, props) {
@@ -25,13 +25,18 @@ export class SlashrUiDialog{
 		this._isOpen = isOpen;
 		return this;
 	}
-	set open(isOpen) {
-		this.isOpen = isOpen;
+	get idx(){
+		return this._metadata.idx;
 	}
-	get open() {
-		return this.isOpen;
+	open() {
+		this._isOpen = true;
+	}
+	close() {
+		this._isOpen = false;
 	}
 }
 decorate(SlashrUiDialog, {
 	_isOpen: observable,
+	open: action,
+	close: action
 });

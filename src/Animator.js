@@ -1,4 +1,4 @@
-
+import {ANIMATE, FADE_IN, FADE_OUT, TRANSITION} from './core/SlashrConstants';
 export class SlashrAnimationQueue {
 	constructor(slashr) {
 		//console.log("TODO: Add support for css transitions.");
@@ -111,7 +111,6 @@ export class SlashrAnimator {
 			queue: (options.queue) ? options.queue : false,
 			options: options
 		};
-		
 
 		switch (type) {
 			// case this._slashr.ROTATE:
@@ -152,7 +151,7 @@ export class SlashrAnimator {
 			// 	this._metadata.fromOpacity = parseFloat(window.getComputedStyle(this._metadata.node, null).opacity || 1);
 			// 	this._metadata.toOpacity = parseFloat(options.opacity);
 			// 	break;
-			case this._slashr.TRANSITION:
+			case TRANSITION:
 				let fromStyle = null;
 				let toStyle = null;
 				let toggled = options.toggled;
@@ -184,7 +183,7 @@ export class SlashrAnimator {
 
 				this._initAnimateProps(fromStyle, toStyle);
 				break;
-			case this._slashr.ANIMATE:
+			case ANIMATE:
 				if (options.to && options.from) {
 					this.elmt.addStyle(options.from);
 					this._initAnimateProps(options.from, options.to);
@@ -361,10 +360,10 @@ export class SlashrAnimator {
 		let pct = (this._metadata.isComplete) ? 1 : this.calculateEase(this._metadata.easing, t);
 
 		switch (this._metadata.type) {
-			case this._slashr.ANIMATE:
+			case ANIMATE:
 				this._animateProps(pct);
 				break;
-			case this._slashr.FADE_IN:
+			case FADE_IN:
 				this._metadata.isInitialized = true;
 				tStyle.opacity = pct;
 				if (this._metadata.isComplete) {
@@ -376,7 +375,7 @@ export class SlashrAnimator {
 				}
 				this._metadata.elmt.addStyle(tStyle);
 				break;
-			case this._slashr.FADE_OUT:
+			case FADE_OUT:
 				this._metadata.isInitialized = true;
 				tStyle.opacity = 1.0 - (pct);
 				if (this._metadata.isComplete) {
@@ -390,7 +389,7 @@ export class SlashrAnimator {
 				}
 				this._metadata.elmt.addStyle(tStyle);
 				break;
-			case this._slashr.TRANSITION:
+			case TRANSITION:
 				this._metadata.isInitialized = true;
 				// tStyle.opacity = pct;
 

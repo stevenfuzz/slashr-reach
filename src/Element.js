@@ -30,12 +30,12 @@ export const _Element = inject("slashr")(observer(
 			if (this.elmt && this.elmt.shouldRender) {
 				if (!this._metadata.hasRendered && this._metadata.isRendered) {
 					if (this.props.scrollToTop) setTimeout(() => {
-						this.utils.dom.scrollTop();
+						Slashr.utils.dom.scrollTop();
 					}, 100);
 					this._metadata.hasRendered = true;
 				}
 				if (this._metadata.isRendered && this.props.scrollTop && !isNaN(this.props.scrollTop)) {
-					this.utils.dom.scrollTop(this.props.scrollTop);
+					Slashr.utils.dom.scrollTop(this.props.scrollTop);
 				}
 			}
 		}
