@@ -653,7 +653,8 @@ decorate(FormElementDomain, {
 	_isValid: observable,
 	_validationErrorMessage: observable,
 	_validationSuccessMessage: observable,
-	value: computed
+	value: computed,
+	setValue: action
 });
 
 //		this._name = name;

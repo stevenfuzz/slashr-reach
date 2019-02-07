@@ -1,4 +1,5 @@
 import {ANIMATE, FADE_IN, FADE_OUT, TRANSITION} from './core/SlashrConstants';
+
 export class SlashrAnimationQueue {
 	constructor(slashr) {
 		//console.log("TODO: Add support for css transitions.");
@@ -40,6 +41,27 @@ export class SlashrAnimationQueue {
 			this._metadata.queueAddTimeout = null;
 		}, 5);
 	}
+
+	run_new(){
+		console.log("run() SlashrAnimationQueue",this._metadata.queue);
+		this._metadata.isRunning = true;
+
+		if (!Object.keys(this._metadata.queue).length) {
+			this._metadata.isRunning = false;
+			//console.log("Element Animtion Queue, Total Frames: ", this.totalFrames);
+			this.totalFrames = 0;
+			return;
+		}
+
+		for (let i in this._metadata.queue) {
+			this._metadata.queue[i].run();
+			if (this._metadata.queue[i] && this._metadata.queue[i].isComplete) delete this._metadata.queue[i];
+		}
+
+		this._metadata.isRunning = false;
+	}
+
+
 	run() {
 		this._metadata.isRunning = true;
 
@@ -55,6 +77,7 @@ export class SlashrAnimationQueue {
 			if (this._metadata.queue[i] && this._metadata.queue[i].isComplete) delete this._metadata.queue[i];
 		}
 
+		
 		this.totalFrames++;
 
 		// TODO: test for css transitions
@@ -341,7 +364,72 @@ export class SlashrAnimator {
 	get isComplete() {
 		return this._metadata.isComplete;
 	}
+	_animate_new(){
+		console.log(this._metadata);
+		let tStyle = {};
+		this._metadata.duration = 3000;
 
+		
+
+		switch (this._metadata.type) {
+			case FADE_IN:
+
+				let animation = `
+@keyframes ButtonIconActive {
+	0% {
+	  transform: scale(.5);
+	  opacity: 0; }
+	80% {
+	  transform: scale(1.5);
+	  opacity: .2; }
+	99% {
+	  opacity: 0; }
+	100% {
+	  display: none; } 	
+}
+				`;
+				tStyle = {
+					opacity: 0,
+					display: "block",
+					
+				}
+				console.log("fade in style",tStyle);
+				this._metadata.elmt.addStyle(tStyle);
+				
+				setTimeout(()=>{
+					tStyle = {
+						opacity: 1,
+						
+						transition: `opacity ${this._metadata.duration}ms ease-out`
+					}
+					this._metadata.elmt.addStyle(tStyle);
+				}, 1)
+				
+				this._metadata.isComplete = true;
+			break;
+			case FADE_OUT:
+				tStyle = {
+					opacity: 1,
+					display: "block",
+					transition: `opacity ${this._metadata.duration}ms ease-out`
+				}
+				this._metadata.elmt.addStyle(tStyle);
+				setTimeout(()=>{
+					tStyle = {
+						opacity: 0,
+					}
+					this._metadata.elmt.addStyle(tStyle);
+				}, 1)
+				this._metadata.isComplete = true;
+
+			break;
+		}
+
+		// ReactDOM.createPortal(
+		// 	this.props.children,
+		// 	document.body
+		// );
+	}
 	_animate() {
 		let tStyle = {};
 		//		if(this._metadata.isCssTransition){

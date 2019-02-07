@@ -127,7 +127,6 @@ export class SlashrUi {
 	}
 	createGrid(props) {
 		let idx = props.name || this.nextGridIdx;
-		console.log("Grid Keys",Object.keys(this._metadata.grid));
 		if (this._metadata.grids[idx]) throw (`Grid ${idx} already exists.`);
 		let elmt = new SlashrUiGrid(this, idx, props);
 		this._metadata.grids[idx] = elmt;

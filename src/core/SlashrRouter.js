@@ -5,6 +5,7 @@
 // import {Container} from './Element';
 // import {HeadTags} from './HeadTags';
 // import {SlashrRouterAppInstance} from './SlashrApp';
+import React from 'react';
 import { set as mobxSet, trace, decorate, observable, action} from "mobx";
 // import {DialogUiDomain} from './Dialog'
 
@@ -82,10 +83,24 @@ export class SlashrRouter{
 
 		if (!actions[actionMethod]) throw (`Controller Error: ${actionMethod} not found in controller ${controller.constructor.name}`);
 		//alert(route.portal);
+
+		let onBeforeLoad = await this.handleBeforeLoad(route, this._route);
+		if(onBeforeLoad !== true){
+			console.log("onBeforeLoad",onBeforeLoad);
+			if(! onBeforeLoad){
+				alert("deal with false");
+			}
+			else if(React.isValidElement(onBeforeLoad)){
+				route.component = onBeforeLoad;
+				this._loadingPortalName = null;
+				this.update(route);
+				return route;
+			}
+			else throw("Router Error: Unknown onBeforeLoad response.");
+		}
+
 		this.handleLoading(route, this._route);
-
 		route.component = await actions[actionMethod](route.data);
-
 		this.handleLoaded(route, this._route);
 
 		this._loadingPortalName = null;
@@ -133,6 +148,10 @@ export class SlashrRouter{
 	handleLoaded(to, from){
 		if(! this._portals[to.portal]) return false;
 		return this._portals[to.portal].handleLoaded(to, from);
+	}
+	handleBeforeLoad(to, from){
+		if(! this._portals[to.portal]) return false;
+		return this._portals[to.portal].handleBeforeLoad(to, from);
 	}
 	setHeadTags(headTags){
 		//console.log("SET HEAD TAGS FOR PORTAL:",this._activePortalName,JSON.stringify(headTags),JSON.stringify(this._portals[this._activePortalName].headTags));
@@ -382,7 +401,8 @@ decorate(SlashrRouter,{
 	_headTags: observable,
 	_uid: observable,
 	//_activePortalName: observable,
-	setActivePortalName: action
+	setActivePortalName: action,
+	updateHeadTags: action
 });
 
 class SlashrRoute{
@@ -445,6 +465,9 @@ class SlashrRoute{
 	get name(){
 		return this._metadata.route.name || null;
 	}
+	get metadata(){
+		return this._metadata.route.metadata || {};
+	}
 }
 
 class SlashrRouterPortal{
@@ -458,6 +481,7 @@ class SlashrRouterPortal{
 		this._name = name;
 		this._router = router;
 		this._route = null;
+		this._onBeforeLoad= props.onBeforeLoad || null;
 		this._onLoading = props.onLoading || null;
 		this._onLoaded = props.onLoaded || null;
 		this._location = this.parseLocation();
@@ -594,6 +618,9 @@ class SlashrRouterPortal{
 	}
 	handleLoaded(to, from){
 		if(this._onLoaded) this._onLoaded(to, from);
+	}
+	handleBeforeLoad(to, from){
+		return this._onBeforeLoad ?  this._onBeforeLoad(to, from) : true;
 	}
 	get component(){
 		if(! this._renderUid) return null;

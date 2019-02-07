@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { NavLink, withRouter } from 'react-router-dom';
 import { Provider, observer, inject } from 'mobx-react';
-import { set as mobxSet, trace, decorate, observable, action, computed, intercept, observe, onReactionError, toJS } from "mobx";
+import { set as mobxSet, configure as mobxConfig, trace, decorate, observable, action, computed, intercept, observe, onReactionError, toJS } from "mobx";
 import { SlashrRouter } from './core/SlashrRouter';
 import {SlashrUi} from './Ui';
 import {SlashrUtils} from './Utils';
@@ -13,6 +13,11 @@ import ResizeObserver from 'resize-observer-polyfill';
 
 // import { decorate, observable, action, computed } from "mobx";
 //import { CSSTransition } from 'react-transition-group';
+
+mobxConfig({
+	enforceActions: "observed"
+});
+
 export class Slashr {
 	static ANIMATE = "animate";
 	static FADE_IN = "fadeIn";
@@ -126,6 +131,7 @@ class SlashrActionsComponentResult {
 			component: component
 		};
 		this.props = {};
+		
 	}
 	render() {
 		let Component = this._metadata.component;
@@ -136,8 +142,11 @@ class SlashrActionsComponentResult {
 export class SlashrDomain{
 	__slashrDomainState = null;
 	constructor() {
-
+		this.__createArrProxy = this.__createArrProxy.bind(this);
+		this.__stateArrPush = this.__stateArrPush.bind(this);
+		this.__stateArrRemove = this.__stateArrRemove.bind(this);
 	}
+
 	get model() {
 		return Slashr.getInstance().app.mdl;
 	}
@@ -164,21 +173,67 @@ export class SlashrDomain{
 		}
 	}
 	get state(){
+		return this.getState();
+	}
+	__createArrProxy(prop){
+		if(! prop in this.__slashrDomainState) return null;
+		if(! Array.isArray(this.__slashrDomainState[prop])) return null;
 		return new Proxy(this, {
-			get : function(obj, prop){
-				if(prop in obj.__slashrDomainState) return obj.__slashrDomainState[prop];
-				else return null;	
+			get : function(obj, arrProp){
+				let arr = obj.__slashrDomainState[prop];
+				console.log(arrProp);
+				switch(arrProp){
+					case "push":
+						return obj.__stateArrPush(prop);
+					break;
+					default:
+						// console.log(arr[arrProp]);
+						// console.log(arr.indexOf);
+						console.log(arr[arrProp]);
+						return arr[arrProp];
+				}
 			}
 		});	
 	}
+	__stateArrRemove(prop, val){
+		return action((val)=>{
+			if(! prop in this.__slashrDomainState) return false;
+			return this.__slashrDomainState[prop].remove(val);
+		})
+		
+	}
+	__stateArrPush(prop){
+		return action((val)=>{
+			if(! prop in this.__slashrDomainState) this.__slashrDomainState[prop] = [val];
+			return this.__slashrDomainState[prop].push(val);
+		})
+		
+	}
+	getState(){
+		return new Proxy(this, {
+			get : function(obj, prop){
+				if(prop in obj.__slashrDomainState){
+					if(Array.isArray(obj.__slashrDomainState[prop])) return obj.__createArrProxy(prop);
+					return obj.__slashrDomainState[prop];
+				}
+				else return null;
+			}
+		});	
+	}
+	
+	
 	set state(state){
+		console.log("set state",state);
 		if(this.__slashrDomainState) throw("State has already been set.");
 		this.__slashrDomainState = state;
 	}
 }
 decorate(SlashrDomain, {
 	__slashrDomainState: observable,
-	setState: action
+	setState: action,
+	stateArrayPush: action,
+	stateArrayRemove: action
+	// getState: action
 });
 
 

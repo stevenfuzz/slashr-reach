@@ -129,12 +129,6 @@ export class MenuSlider extends React.Component {
 		super(props);
 		this.menuSliderDomain = new MenuSliderDomain(this.props.name, this.props);
 	}
-	componentDidMount() {
-		
-	}
-	componentDidUpdate() {
-		
-	}
 	render() {
 		return (
 			<Provider menuSlider={this.menuSliderDomain}>
@@ -167,9 +161,9 @@ export const _MenuSlider = inject("menuSlider","slashr")(observer(
 			// console.log("menu slider location",this.props.slashr.router.location.pathname,this.props.slashr.router.location.search);
 			if(this.props.activeItem !== this.props.menuSlider.activeItem){
 				this.props.menuSlider.activeItem = this.props.activeItem;
-				if(this.props.slashr.router.history.action && this.props.slashr.router.history.action === "POP"){
+				//if(this.props.slashr.router.history.action && this.props.slashr.router.history.action === "POP"){
 					this.props.menuSlider.scrollToItem = this.props.menuSlider.activeItem;
-				}
+				//}
 			}
 
 			// if(this.props.activeItem === this.props.menuSlider.activeItem){

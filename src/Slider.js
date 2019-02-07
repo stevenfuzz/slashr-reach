@@ -127,14 +127,14 @@ export class SliderDomain {
 
 			if (size) {
 				let hasScroll = (size.scrollWidth > size.width);
-				let isScrollStart = (size.scrollLeft == 0);
-				let isScrollEnd = ((size.scrollLeft + size.width) == size.scrollWidth);
+				let isScrollStart = (size.scrollLeft <= 8);
+				let isScrollEnd = (size.scrollWidth - (size.scrollLeft + size.width) <= 8);
 				
+
 				this._stateProps.doShowControlLeft =  (hasScroll && !isScrollStart);
 				this._stateProps.doShowControlRight = (hasScroll && !isScrollEnd);
 				
 				if (this.updateScrollToItem && this.scrollToItem) {
-					console.log("update scroll item");
 					// Look for the active item idx
 					let itemIdx = 0;
 					for (let i = 0; i < this.items.length; i++) {

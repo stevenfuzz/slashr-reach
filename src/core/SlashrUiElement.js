@@ -1,5 +1,5 @@
 import React from 'react';
-import { toJS, decorate, observable } from "mobx";
+import { toJS, decorate, observable, action } from "mobx";
 import {SlashrUtils} from '../Utils';
 
 const utils = new SlashrUtils();
@@ -441,8 +441,11 @@ export class SlashrUiElement {
 	}
 
 	set style(styles) {
-		this._stateVars.style = styles
-		//console.log("fade in Updated Star Var Style", styles, toJS(this.style));
+		this.setStyle(styles);
+		return this;
+	}
+	setStyle(styles){
+		this._stateVars.style = styles;
 		return this;
 	}
 	get nativeStyle() {
@@ -551,11 +554,14 @@ export class SlashrUiElement {
 		return this._stateProps.classNames || [];
 	}
 	set classNames(classNames) {
+		this.setClassNames(classNames);
+	}
+	setClassNames(classNames){
 		this._stateProps.classNames = utils.array.unique(classNames);
 	}
-	set addClassName(className) {
-		if (this._stateProps.classNames.indexOf(className) === -1) this._stateProps.classNames.push(className);
-	}
+	// set addClassName(className) {
+	// 	if (this._stateProps.classNames.indexOf(className) === -1) this._stateProps.classNames.push(className);
+	// }
 
 	parseStyles(styles) {
 
@@ -834,6 +840,10 @@ export class SlashrUiElement {
 }
 decorate(SlashrUiElement, {
 	_stateProps: observable,
-	_stateVars: observable
+	_stateVars: observable,
+	setStyle: action,
+	setClassNames: action,
+	_updateProps: action,
+	_updateStyleProps: action
 });
 
