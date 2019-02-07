@@ -15,7 +15,7 @@ import ResizeObserver from 'resize-observer-polyfill';
 //import { CSSTransition } from 'react-transition-group';
 
 mobxConfig({
-	enforceActions: "observed"
+	//enforceActions: "observed",
 });
 
 export class Slashr {
@@ -145,6 +145,31 @@ export class SlashrDomain{
 		this.__createArrProxy = this.__createArrProxy.bind(this);
 		this.__stateArrPush = this.__stateArrPush.bind(this);
 		this.__stateArrRemove = this.__stateArrRemove.bind(this);
+		// console.log(Object.getOwnPropertyNames(Object.getPrototypeOf(this)));
+		// let methods = Object.getOwnPropertyDescriptors(Object.getPrototypeOf(this));
+		// for(let name in methods){
+		// 	// if(! methods[name].get) continue;
+		// 	let doBindAction = false;
+		// 	console.log(name,methods[name]);
+
+		// 	if(methods[name].get && methods[name].get.toString().indexOf("this.setState") !== -1){
+		// 		throw("Slashr Domain Error: set state in get");
+		// 	}
+		// 	else if(methods[name].set && methods[name].set.toString().indexOf("this.setState") !== -1){
+		// 		//throw("Slashr Domain Error: set state in set");
+		// 		console.log("Setting found for slashr domain, should be set as action?");
+		// 	}
+		// 	else if(! methods[name].get && ! methods[name].set){
+
+		// 		let method = this[name];
+		// 		if (!(method instanceof Function) || method === this) continue;
+		// 		if(method.toString().indexOf("this.setState") !== -1){
+		// 			this[name] = action(this[name]);
+		// 			console.log("FOUND SET STATE!!!!!!!!!!", this[name]);
+		// 		}
+		// 	}
+		// }
+
 	}
 
 	get model() {
@@ -181,15 +206,11 @@ export class SlashrDomain{
 		return new Proxy(this, {
 			get : function(obj, arrProp){
 				let arr = obj.__slashrDomainState[prop];
-				console.log(arrProp);
 				switch(arrProp){
 					case "push":
 						return obj.__stateArrPush(prop);
 					break;
 					default:
-						// console.log(arr[arrProp]);
-						// console.log(arr.indexOf);
-						console.log(arr[arrProp]);
 						return arr[arrProp];
 				}
 			}
@@ -213,7 +234,8 @@ export class SlashrDomain{
 		return new Proxy(this, {
 			get : function(obj, prop){
 				if(prop in obj.__slashrDomainState){
-					if(Array.isArray(obj.__slashrDomainState[prop])) return obj.__createArrProxy(prop);
+					// if(Array.isArray(obj.__slashrDomainState[prop])) return obj.__createArrProxy(prop);
+					// return obj.__slashrDomainState[prop];
 					return obj.__slashrDomainState[prop];
 				}
 				else return null;
@@ -223,7 +245,7 @@ export class SlashrDomain{
 	
 	
 	set state(state){
-		console.log("set state",state);
+		// console.log(this,"set state",state);
 		if(this.__slashrDomainState) throw("State has already been set.");
 		this.__slashrDomainState = state;
 	}
