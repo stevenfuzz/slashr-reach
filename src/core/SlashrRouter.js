@@ -50,6 +50,7 @@ export class SlashrRouter{
 		// 	uiState.ui = {};
 		// }
 		this._uiState = uiState;
+
 		//console.log("init ui state from loc",JSON.stringify(this._uiState));
 		
 		//alert(this._uiState.router.portal);
@@ -86,9 +87,8 @@ export class SlashrRouter{
 
 		let onBeforeLoad = await this.handleBeforeLoad(route, this._route);
 		if(onBeforeLoad !== true){
-			console.log("onBeforeLoad",onBeforeLoad);
 			if(! onBeforeLoad){
-				alert("deal with false");
+				throw("Router Error: Todo, onbeforeload false");
 			}
 			else if(React.isValidElement(onBeforeLoad)){
 				route.component = onBeforeLoad;
@@ -408,13 +408,22 @@ decorate(SlashrRouter,{
 class SlashrRoute{
 	constructor(slashr,routeData,routerPortalName, options = {}){
 		this._slashr = slashr;
+
+		let stateData = {};
+		if(options.location.state){
+			for(let prop in options.location.state){
+				if(prop === "_slashr") continue;
+				stateData[prop] = options.location.state[prop];
+			}
+		}
 		this._metadata = {
 			route: routeData,
 			portal: routerPortalName,
 			path: options.location.pathname,
 			data: {
 				params: (options.match) ? options.match.params : {},
-				query: {}
+				query: {},
+				state: stateData
 			},
 			// params: (options.match) ? options.match.params : {},
 			// query: {},
@@ -450,11 +459,14 @@ class SlashrRoute{
 	get query(){
 		return this._metadata.data.query;
 	}
+	get state(){
+		return this._metadata.data.state;
+	}
 	get qry(){
 		return this.query;
 	}
 	get data(){
-		return {...this.query,...this.params};
+		return {...this.state,...this.query,...this.params};
 	}
 	get dt(){
 		return this.data;

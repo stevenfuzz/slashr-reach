@@ -22,21 +22,26 @@ export class SlashrUiDialog{
 		return this._isOpen;
 	}
 	set isOpen(isOpen) {
+		this.setOpen(isOpen);
+	}
+	setOpen(isOpen){
 		this._isOpen = isOpen;
-		return this;
 	}
 	get idx(){
 		return this._metadata.idx;
 	}
 	open() {
+		console.log("open dialog");
 		this._isOpen = true;
 	}
 	close() {
+		console.log("close dialog");
 		this._isOpen = false;
 	}
 }
 decorate(SlashrUiDialog, {
 	_isOpen: observable,
+	setOpen: action,
 	open: action,
 	close: action
 });

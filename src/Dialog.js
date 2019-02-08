@@ -3,6 +3,7 @@ import {Slashr} from './Slashr';
 import {BodyPortal} from './BodyPortal';
 import {Container} from './Element';
 import {RouterPortal} from './Router';
+import {trace} from 'mobx';
 
 export const Dialog = React.forwardRef((props, ref) => {
 	return (
@@ -52,9 +53,12 @@ export const _Dialog = Slashr.connect(
 			return true;
 		}
 		componentDidUpdate(prevProps, prevState, snapshot) {
+			alert("check why not opening after second refresh");
+			console.log(this.props.open, this.dlg.isOpen, this.hasOpened);
 			if (this.props.open !== prevProps.open) this.dlg.isOpen = this.props.open;
 			if (this.dlg.isOpen) {
 				if (!this.hasOpened) {
+					console.log("open open open");
 					this.hasOpened = true;
 					this.onOpen();
 				}
@@ -173,17 +177,17 @@ export const RouteDialog = Slashr.connect(
 		open() {
 			//this.props.app.mdl.ui.dialog.open("route");
 		}
-		handleUpdate() {
-			if (this.shouldClose) this.close();
-			else if (this.shouldOpen) this.open();
-			if (!this.shouldClose) this.location = this.props.location;
-		}
-		componentDidMount() {
-			this.handleUpdate();
-		}
-		componentDidUpdate() {
-			this.handleUpdate();
-		}
+		// handleUpdate() {
+		// 	// if (this.shouldClose) this.close();
+		// 	// else if (this.shouldOpen) this.open();
+		// 	// if (!this.shouldClose) this.location = this.props.location;
+		// }
+		// componentDidMount() {
+		// 	this.handleUpdate();
+		// }
+		// componentDidUpdate() {
+		// 	this.handleUpdate();
+		// }
 		// handleClickClose(){
 		// 	throw("SLKDJF");
 		// 	this.handleClose();
@@ -219,31 +223,30 @@ export const RouteDialog = Slashr.connect(
 			}
 			//this.slashr.app.router.push(routerPortal.location.pathname + (routerPortal.location.search || ""));
 		}
-		componentWillReact() {
-			// console.log("Route dialog react!!!",this.props);
-		}
 		componentWillUnmount() {
 			if (this.isOpen) this.close();
 		}
 		render() {
+			trace();
+			
 			let uid = this.props.slashr.router.portal(this.name).isInitialized;
-			let routeDialogComponents = null;
-			if (!this.shouldClose) {
-				// routeDialogComponents = this.routePropss.map(({path, key, component, dialog, reload}) => {
-				// 	if(dialog){
+			//let routeDialogComponents = null;
+			// if (!this.shouldClose) {
+			// 	// routeDialogComponents = this.routePropss.map(({path, key, component, dialog, reload}) => {
+			// 	// 	if(dialog){
 
-				// 		// Set key?
-				// 		return <Route exact path={path} key={key || path} render={(props)=>{
-				// 			let Component = component;
-				// 			return <Component 
-				// 					isDialog 
-				// 					{...props}
-				// 				/>;
-				// 		}}/>
-				// 	}
-				// 	return null;
-				// });
-			}
+			// 	// 		// Set key?
+			// 	// 		return <Route exact path={path} key={key || path} render={(props)=>{
+			// 	// 			let Component = component;
+			// 	// 			return <Component 
+			// 	// 					isDialog 
+			// 	// 					{...props}
+			// 	// 				/>;
+			// 	// 		}}/>
+			// 	// 	}
+			// 	// 	return null;
+			// 	// });
+			// }
 			return (
 
 				<Dialog

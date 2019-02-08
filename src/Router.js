@@ -388,6 +388,7 @@ export class SlashrAppRouter{
 			options = route;
 			route = null;
 			if(options.route) route = options.route;
+			else if(options.pathname) route = options.pathname;
 		}
 		// else if(! route){
 		// 	route = router;
@@ -401,7 +402,7 @@ export class SlashrAppRouter{
 
 		let delay = options.delay || 0;
 		let state = this._slashr.router.createState(options);
-		
+
 		// If changing routes for the new route, remove from state
 		let currRoute = this._slashr.router.location.pathname + (this._slashr.router.location.search || "");
 		
