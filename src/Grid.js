@@ -2,6 +2,7 @@
 import React from 'react';
 import { observer, inject } from 'mobx-react';
 import { Container } from './Element';
+import { trace } from 'mobx';
 
 export const _GridSection = inject("slashr")(observer(
 	class _GridSection extends React.Component {
@@ -41,6 +42,7 @@ export const _GridSection = inject("slashr")(observer(
 		// 	return this.props.children;
 		// }
 		render() {
+			trace();
 			return (
 				<Container
 					// onObserveIntersection={this.handleObserveIntersection}
@@ -439,7 +441,7 @@ export const _GridLoader = inject("slashr")(observer(
 // 		);
 // 	}
 // }
-export const Grid = inject("slashr","portal")(observer(
+export const Grid = inject("slashr")(observer(
 	class Grid extends React.Component {
 		constructor(props) {
 			super(props);
@@ -706,7 +708,7 @@ export const Grid = inject("slashr","portal")(observer(
 // 	}
 // }
 
-export const MasonaryGrid = inject("slashr", "portal")(observer(
+export const MasonaryGrid = inject("slashr")(observer(
 	class MasonaryGrid extends React.Component {
 		constructor(props) {
 			super(props);
@@ -777,7 +779,7 @@ export const MasonaryGrid = inject("slashr", "portal")(observer(
 			this.grid.updateLayout();
 		}
 		handleObserveResize(e) {
-			
+			console.warn("Grid resize event should be throttled.");
 			// TODO: Make grid resize with props
 			// if (this.updateLayout()) {
 			// 	this.forceUpdate();

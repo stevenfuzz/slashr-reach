@@ -377,9 +377,12 @@ export class SlashrRouter{
 	setActivePortalName(activePortalName){
 		this._activePortalName = activePortalName;
 		if(this._uid !== this._portals[activePortalName].uid){
-			this._uid = this._portals[activePortalName].uid;
+			this.setUidAction(this._portals[activePortalName].uid);
 		} 
 		return this;
+	}
+	setUidAction(uid){
+		this._uid = uid;
 	}
 	get uid(){
 		return this._uid;
@@ -590,8 +593,11 @@ class SlashrRouterPortal{
 		let uid = (this._location) ? this._location.pathname + (this._location.search || "") : null;
 
 		if(uid !== this._uid){
-			this._uid = uid;
+			this.setUidAction(uid);
 		}
+	}
+	setUidAction(uid){
+		this._uid = uid;
 	}
 	render(){
 		if(this._uid !== this._renderUid){
@@ -686,7 +692,9 @@ decorate(SlashrRouterPortal, {
 	// component: computed,
 	_uid: observable,
 	_renderUid: observable,
-	render: action
+	render: action,
+	setUidAction: action,
+	reset: action
 });
 
 export class SlashrRouterAppInstance{

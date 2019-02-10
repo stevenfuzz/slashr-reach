@@ -150,6 +150,7 @@ export class SlashrUiGrid {
 	updateLayout() {
 		try{
 			if (this.layoutUpdater) {
+				console.log("update layout");
 				// if(this._metadata.updateLayoutTimeout) return;
 				// this._metadata.updateLayoutTimeout = setTimeout(
 					// async ()=>{
@@ -478,7 +479,8 @@ export class SlashrUiGrid {
 decorate(SlashrUiGrid, {
     _stateProps: observable,
     initialize: action,
-    loadPage: action
+	loadPage: action,
+	updateLayout: action
 });
 
 export class SlashrUiGridSection {
@@ -649,6 +651,7 @@ export class SlashrUiGridSection {
 		}
 	}
 	render() {
+		console.log("Grid Render: Will this react?");
 		//TODO: Kind of a hacky way to force reaction
 		this.checkUpdates();
 		return this.grid.renderSection(this);
@@ -656,11 +659,11 @@ export class SlashrUiGridSection {
 	renderSpacer() {
 		return this.grid.renderSectionSpacer(this);
 	}
-
 }
 decorate(SlashrUiGridSection, {
 	_stateVars: observable,
-	// shouldRender: computed,
-	// pages: computed
+	initialize: action,
+	upodateLayout: action,
+	setPageRangeLoaded: action,
+	checkUpdates: action
 });
-

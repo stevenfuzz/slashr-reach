@@ -277,6 +277,7 @@ export class SlashrUiElement {
 		// }
 		// this._triggerAnimationEvents();
 		// if (update === false) return false;
+		//if(doUpdateState) this.handleReact(props);
 		this._update(props);
 	}
 
@@ -293,6 +294,7 @@ export class SlashrUiElement {
 		// if (props.className) {
 		// 	this._props.className = props.className;
 		// }
+
 		let animateProps = {};
 		if (props.animate) {
 			animateProps = props.animate;
@@ -841,8 +843,10 @@ export class SlashrUiElement {
 decorate(SlashrUiElement, {
 	_stateProps: observable,
 	_stateVars: observable,
+	init: action,
 	setStyle: action,
 	setClassNames: action,
+	handleUpdate: action,
 	_updateProps: action,
 	_updateStyleProps: action
 });

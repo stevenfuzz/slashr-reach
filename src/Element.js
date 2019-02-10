@@ -1,10 +1,10 @@
 
 import React from 'react';
 import {Slashr} from './Slashr';
-import { toJS, decorate, observable } from "mobx";
+import { toJS, decorate, observable, trace, action } from "mobx";
 import { inject, observer } from "mobx-react";
 import {SlashrUiElement} from './core/SlashrUiElement';
-export const _Element = inject("slashr")(observer(
+export const _Element = inject("app")(observer(
 	class _Element extends React.Component {
 		constructor(props) {
 			super(props);
@@ -12,16 +12,18 @@ export const _Element = inject("slashr")(observer(
 				elmt: null,
 				isMounted: false,
 				isRendered: false,
-				hasRendered: false
+				hasRendered: false,
 			}
+			this.hasReacted = false;
 			// Only create element if it has required props
-
+		
 			if (SlashrUiElement.shouldElementInit(props)) {
-				this._metadata.elmt = this.props.slashr.ui.createElement(props);
+				this._metadata.elmt = this.props.app._slashr.ui.createElement(props);
 			}
 		}
 		componentDidMount() {
 			if (this.elmt && this.elmt.shouldRender) {
+				console.log("ELEMENT HAS MOUNTED", this.elmt.idx);
 				this.elmt.handleMount(this.props);
 				this.updateRender();
 			}
@@ -46,17 +48,28 @@ export const _Element = inject("slashr")(observer(
 		// 	// return SlashrUiElement.shouldComponentUpdate(this.props, nextProps);
 		// }
 		componentDidUpdate(prevProps, prevState, snapshot) {
+			let hasReacted = this.hasReacted;
+			this.hasReacted = false;
+			//if(this.elmt && ! hasReacted) this.elmt.handleReact(this.props);
 			if (this.elmt && this.elmt.shouldRender) {
 				this.updateRender();
 
 				//console.log("element componentDidUpdate",this.elmt.className);
 				let update = SlashrUiElement.reducePropUpdates(prevProps, this.props);
+
+				if(update){
+					if( ! hasReacted) console.warn("Prop update has taken place without a reaction.",this.elmt.idx,this.props,this.elmt.idx,update);
+					else console.warn("Prop update reacted.",this.elmt.idx,this.props,this.elmt.idx,update);
+				}
+
 				// TODO: this should probably be moved
 				// this.elmt._triggerAnimationEvents();
 				if (update === false) return false;
 
 				this.elmt.handleUpdate(update);
 			}
+			// hasReacted track whether the state needs to be updated.
+			
 			// console.log("element component update");
 			// // if(! this.elmt){
 			// // 	if(! SlashrUiElement.shouldElementInit(this.props)) return;
@@ -65,7 +78,7 @@ export const _Element = inject("slashr")(observer(
 
 			// // 	console.log("element CREATING ELEMENT!!!!!!!!!!!",this.props, this);
 			// // 	//this.elmt.handleMount(this.props);
-			// // 	return;
+		// // 	return;
 			// // }
 			// let update = SlashrUiElement.reducePropUpdates(prevProps, this.props);
 			// console.log(update);
@@ -78,21 +91,33 @@ export const _Element = inject("slashr")(observer(
 			this.unmount();
 		}
 		componentWillReact() {
+			this.hasReacted = true;
+			
 			if (this.elmt) {
-				//console.log("element componentWillReact",this.elmt.className);
+				console.warn("prop update element componentWillReact",this.elmt.idx,this.props);
 				this.elmt.handleReact(this.props);
 			}
+			else console.log("react no elmt");
 		}
 		get elmt() {
 			return this._metadata.elmt;
 		}
-		s
 		unmount() {
 			if (this.elmt) {
 				this.elmt.unmount();
 			}
 		}
 		render() {
+			// if("transition" in this.props)
+			trace();
+			console.log(this);
+			// console.log(this.props);
+			// Moved from component will react
+			// trace();
+			// if (this.elmt) {
+			// 	console.log("render element", this.props);
+			// 	this.elmt.handleReact(this.props);
+			// }
 			//this.elmt.update();
 			// Check if the elment has unmountOnHide
 			// if(this.rendered){
@@ -124,6 +149,7 @@ export const _Element = inject("slashr")(observer(
 			// }
 			//this.rendered = true;
 			//TODO: Check why REF is broken, and needs to get used on render?
+			
 			let props = {
 				//ref: (this.elmt) ? (this.props.forwardRef || this.elmt.ref) : this.props.forwardRef,
 				forwardRef: (this.elmt) ? (this.props.forwardRef || this.elmt.ref) : this.props.forwardRef,
@@ -138,6 +164,10 @@ export const _Element = inject("slashr")(observer(
 				elmt: this.elmt || null,
 				shouldRender: (this.elmt) ? this.elmt.shouldRender : true
 			};
+
+			if(this.elmt){
+				let className = this.elmt._stateProps.className;
+			}
 
 			let className = (this.elmt) ? this.elmt.className : this.props.className;
 			let classNames = (this.elmt) ? this.elmt.classNames : this.props.classNames;
@@ -200,8 +230,10 @@ class __Element extends React.PureComponent {
 			name: this.props.name || null,
 			id: this.props.id || null
 		};
+
 		if (this.props.elmt) {
 			props = { ...props, ...this.props.elmt.eventHandlers };
+			props.key = "ele"+this.props.elmt.idx;
 		}
 
 		//if(this.props.forwardRef) console.log("element ref mount",this.props.className,this.props.forwardRef.current);

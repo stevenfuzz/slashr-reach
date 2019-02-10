@@ -165,22 +165,17 @@ export const _Router = inject("slashr")(observer(
 		componentDidMount() {
 			this.updateRoutes();
 		}
-		componentWillReact() {
-		}
 		componentDidUpdate(prevProps) {
 			if (this.props.location.pathname !== prevProps.location.pathname || this.props.location.search !== prevProps.location.search) {
 				this.props.slashr.router.initialize(this.props);
 				this.updateRoutes(prevProps.location);
 			}
 		}
-		componentWillReact() {
-
-		}
 		updateScroll(pos){
 			// Poll for the body to be big enough, then scroll
 			// If more than 1 second, just give up and set it
 			let bodySize = this.props.slashr.utils.dom.getBodySize();
-			//console.log("update scroll x",document.documentElement.clientWidth, window.scrollX,pos.x,window.scrollx >= pos.x);
+			//o("update scroll x",document.documentElement.clientWidth, window.scrollX,pos.x,window.scrollx >= pos.x);
 			if(this.scrollUpdateAttempts >= 100  || 
 				(bodySize.y >= pos.y && bodySize.x >= pos.x)){
 				this.props.slashr.utils.dom.scrollTo(pos.x, pos.y);
@@ -256,7 +251,7 @@ export const RouterPortal = inject("slashr")(observer(
 					//route={this.props.slashr.router.portal(this.name)}
 						<Provider 
 							app={this.appContext} 
-							portal={this.props.slashr.router.portal(this.name)}
+							// portal={this.props.slashr.router.portal(this.name)}
 						>	
 							<Container
 								className="router-portal"

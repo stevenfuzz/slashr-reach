@@ -348,7 +348,10 @@ export class SliderDomain {
 }
 decorate(SliderDomain, {
 	_stateProps: observable,
-	update: action
+	update: action,
+	initialize: action,
+	handleMount: action,
+	handleUpdate: action
 });
 
 export class Slider extends React.Component {

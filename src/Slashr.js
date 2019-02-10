@@ -14,9 +14,9 @@ import ResizeObserver from 'resize-observer-polyfill';
 // import { decorate, observable, action, computed } from "mobx";
 //import { CSSTransition } from 'react-transition-group';
 
-mobxConfig({
-	//enforceActions: "observed",
-});
+// mobxConfig({
+// 	enforceActions: "observed",
+// });
 
 export class Slashr {
 	static ANIMATE = "animate";

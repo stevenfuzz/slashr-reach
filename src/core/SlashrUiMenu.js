@@ -21,6 +21,9 @@ export class SlashrUiMenu{
 		return this._stateVars.isOpen;
 	}
 	set isOpen(isOpen) {
+		this.setIsOpen(isOpen);
+	}
+	setIsOpen(isOpen){
 		this._stateVars.isOpen = isOpen;
 		return this;
 	}
@@ -33,4 +36,5 @@ export class SlashrUiMenu{
 }
 decorate(SlashrUiMenu, {
 	_stateVars: observable,
+	setIsOpen: action
 });

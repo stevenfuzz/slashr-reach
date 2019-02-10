@@ -18,4 +18,4 @@ export * from './BodyPortal';
 export * from './TextEditor';
 // export default Slashr;
 //export * from './Ui';
-export {observable,action} from "mobx";
+export {observable,action,computed} from "mobx";

@@ -208,9 +208,15 @@ class FormDomain {
 		await this.validate();
 
 		if (this._isValid) {
-			this._errors = [];
+			this.clearErrors();
 			this._onSubmit(this);
 		}
+	}
+	clearErrors(){
+		this.setErrors([]);
+	}
+	setErrors(errors){
+		this._errors = errors;
 	}
 	async _handleReset(event) {
 		if (this.onReset) this.onReset(this, event);
@@ -332,7 +338,12 @@ decorate(FormDomain, {
 	_value: observable,
 	_isValid: observable,
 	_errors: observable,
-	_elmts: observable
+	_elmts: observable,
+	_addElement: action,
+	_handleSubmit: action,
+	addError: action,
+	setErrors: action,
+	validate: action
 });
 
 //export const FormElementDomain = inject("form")(observer(
@@ -654,7 +665,12 @@ decorate(FormElementDomain, {
 	_validationErrorMessage: observable,
 	_validationSuccessMessage: observable,
 	value: computed,
-	setValue: action
+	setValue: action,
+	setChoices: action,
+	_handleFocus: action,
+	_handleBlur: action,
+	_handleChange: action,
+	validate: action
 });
 
 //		this._name = name;
