@@ -2,7 +2,7 @@ import React from 'react';
 import { Provider, observer, inject } from 'mobx-react';
 import { decorate, observable, action, computed } from "mobx";
 //import { CSSTransition } from 'react-transition-group';
-
+import {Button} from "./Button";
 
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import './DayPicker.css'
@@ -1857,34 +1857,34 @@ export const ToggleSwitch = inject(["form"])(observer(
 // 	}
 // ));
 
-export const Button = inject("form")(observer(
-	class Button extends React.Component {
-		constructor(props) {
-			super(props);
-			this.elmt = this.props.form._addElement(this, {
-				props: {
-					//content: this.props.children,
-					type: (this.props.type) ? this.props.type : "submit",
-					className: (this.props.className) ? this.props.className : ""
-				}
-			});
-		}
-		componentDidMount() {
+// export const Button = inject("form")(observer(
+// 	class Button extends React.Component {
+// 		constructor(props) {
+// 			super(props);
+// 			this.elmt = this.props.form._addElement(this, {
+// 				props: {
+// 					//content: this.props.children,
+// 					type: (this.props.type) ? this.props.type : "submit",
+// 					className: (this.props.className) ? this.props.className : ""
+// 				}
+// 			});
+// 		}
+// 		componentDidMount() {
 
-		}
-		render() {
-			return (
-				<button
-					name={this.elmt.name}
-					type={this.elmt.type}
-					className={this.elmt.className}
-				>
-					{this.props.children}
-				</button>
-			);
-		}
-	}
-));
+// 		}
+// 		render() {
+// 			return (
+// 				<button
+// 					name={this.elmt.name}
+// 					type={this.elmt.type}
+// 					className={this.elmt.className}
+// 				>
+// 					{this.props.children}
+// 				</button>
+// 			);
+// 		}
+// 	}
+// ));
 
 export class SubmitButton extends React.Component {
 	constructor(props) {
@@ -1945,6 +1945,31 @@ export const Error = inject("form")(observer(
 		}
 		render() {
 			if (!this.hasValidationErrorMessage()) return null;
+			return React.createElement(this.elmt.tag, {
+				className: this.elmt.className
+			}, this.props.form.elmts[this.elmt.control].validationErrorMessage);
+		}
+	}
+));
+
+export const HelperText = inject("form")(observer(
+	class HelperText extends React.Component {
+		constructor(props) {
+			super(props);
+			if (!this.props.htmlFor && !this.props.control) throw ("Helper Text tag error. Either htmlFor or control property must be defined.");
+			this.elmt = this.props.form._addElement(this, {
+				props: {
+					tag: (this.props.tag) ? this.props.tag : "div",
+					className: (this.props.className) ? this.props.className : "helper-text"
+				}
+			});
+		}
+		hasHelperText() {
+			if (!this.props.form.elmts[this.elmt.control]) return false;
+			if (this.props.form.elmts[this.elmt.control].helperText) return true;
+		}
+		render() {
+			if (!this.hasHelperText()) return null;
 			return React.createElement(this.elmt.tag, {
 				className: this.elmt.className
 			}, this.props.form.elmts[this.elmt.control].validationErrorMessage);

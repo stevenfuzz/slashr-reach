@@ -31,11 +31,9 @@ export class SlashrUiDialog{
 		return this._metadata.idx;
 	}
 	open() {
-		console.log("open dialog");
 		this._isOpen = true;
 	}
 	close() {
-		console.log("close dialog");
 		this._isOpen = false;
 	}
 }

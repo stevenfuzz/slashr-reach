@@ -37,7 +37,8 @@ import { dropCursor } from "prosemirror-dropcursor"
 import { gapCursor } from "prosemirror-gapcursor"
 // import { menuBar } from "prosemirror-menu"
 
-import { Container, Button } from './Element';
+import { Container } from './Element';
+import { Button } from './Button';
 import {Dialog, DialogButtons} from './Dialog';
 import { Form, Input, SubmitButton, Error, Success, Label, Errors, Field, FieldGroup, Hidden, TextArea, File, Select, DatePicker, AutoComplete } from './Form';
 

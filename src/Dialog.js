@@ -44,6 +44,18 @@ export const _Dialog = Slashr.connect(
 			e.preventDefault();
 			e.stopPropagation();
 		}
+		update(prevProps = {}){
+      		if (this.props.open !== prevProps.open) this.dlg.isOpen = this.props.open;
+			if (this.dlg.isOpen){
+				if (!this.hasOpened){
+					this.hasOpened = true;
+					this.onOpen();
+				}
+			} else if (this.hasOpened){
+				this.hasOpened = false;
+				this.onClose();
+			}
+		}
 		close() {
 			if (this.props.shouldClose && this.props.shouldClose() === false) {
 				return false;
@@ -52,21 +64,11 @@ export const _Dialog = Slashr.connect(
 			this.dlg.close();
 			return true;
 		}
+		componentDidMount(){
+			this.update();
+		}
 		componentDidUpdate(prevProps, prevState, snapshot) {
-			alert("check why not opening after second refresh");
-			console.log(this.props.open, this.dlg.isOpen, this.hasOpened);
-			if (this.props.open !== prevProps.open) this.dlg.isOpen = this.props.open;
-			if (this.dlg.isOpen) {
-				if (!this.hasOpened) {
-					console.log("open open open");
-					this.hasOpened = true;
-					this.onOpen();
-				}
-			}
-			else if (this.hasOpened) {
-				this.hasOpened = false;
-				this.onClose();
-			}
+			this.update(prevProps)
 		}
 		// componentWillReact(){
 		// 	console.log("Component Will React");
@@ -100,6 +102,7 @@ export const _Dialog = Slashr.connect(
 				);
 			}
 			return (
+				
 				<BodyPortal>
 					<Container
 						hide
@@ -193,14 +196,8 @@ export const RouteDialog = Slashr.connect(
 		// 	this.handleClose();
 		// }
 		handleOpen() {
-			if (this.props.onOpen) this.props.onOpen();
-			// if(this.location.pathname === this.props.location.pathname){
-			// 	this.props.history.go(-1);
-			// }
-			// if(postRoute ===  this.props.location.pathname){
-			// 
-			// }
-			// if(this.isOpen) this.close();
+			this.slashr.app.mdl.ui.layout.setScrollable(false);
+     		if (this.props.onOpen) this.props.onOpen();
 		}
 		handleClose() {
 			// console.log("route dialog on close",this.props.onClose);
@@ -221,14 +218,13 @@ export const RouteDialog = Slashr.connect(
 					search: routerPortal.location.search || ""
 				});
 			}
+			this.slashr.app.mdl.ui.layout.setScrollable(true); //this.slashr.app.router.push(routerPortal.location.pathname + (routerPortal.location.search || ""));
 			//this.slashr.app.router.push(routerPortal.location.pathname + (routerPortal.location.search || ""));
 		}
 		componentWillUnmount() {
 			if (this.isOpen) this.close();
 		}
 		render() {
-			trace();
-			
 			let uid = this.props.slashr.router.portal(this.name).isInitialized;
 			//let routeDialogComponents = null;
 			// if (!this.shouldClose) {

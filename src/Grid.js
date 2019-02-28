@@ -842,6 +842,8 @@ export const MasonaryGrid = inject("slashr")(observer(
 			this.numCols = nNumCols
 			//this.numRows = Math.ceil(this.totalItems / this.numCols);
 
+			console.log(this.numCols);
+
 			// this.grid.updateLayout();
 
 			return true;
@@ -925,7 +927,6 @@ export const MasonaryGrid = inject("slashr")(observer(
 			if (items.length) {
 				secItems.push(items);
 			}
-
 			let sections = [];
 			for (let secIdx in secItems) {
 				let secNum = parseInt(secIdx) + 1;
@@ -934,6 +935,7 @@ export const MasonaryGrid = inject("slashr")(observer(
 				let columns = [];
 				let colPageItems = [];
 				let numRows = this.calculateNumRows(items.length);
+
 				for (let row = 1; row <= numRows; row++) {
 					for (let col = 1; col <= this.numCols; col++) {
 						if (items[itemIdx]) {
@@ -1003,9 +1005,9 @@ export const MasonaryGrid = inject("slashr")(observer(
 
 
 		render() {
-			//this.hasRendered = true;
+			// this.hasRendered = true;
 			// console.log(this.props);
-			// trace(true);
+			trace(true);
 			return (
 				<Container
 					//onWindowResize={this.handleWindowResize}

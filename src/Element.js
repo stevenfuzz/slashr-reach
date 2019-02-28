@@ -4,6 +4,7 @@ import {Slashr} from './Slashr';
 import { toJS, decorate, observable, trace, action } from "mobx";
 import { inject, observer } from "mobx-react";
 import {SlashrUiElement} from './core/SlashrUiElement';
+import {RouteLink} from './Router';
 export const _Element = inject("app")(observer(
 	class _Element extends React.Component {
 		constructor(props) {
@@ -23,7 +24,6 @@ export const _Element = inject("app")(observer(
 		}
 		componentDidMount() {
 			if (this.elmt && this.elmt.shouldRender) {
-				console.log("ELEMENT HAS MOUNTED", this.elmt.idx);
 				this.elmt.handleMount(this.props);
 				this.updateRender();
 			}
@@ -57,10 +57,10 @@ export const _Element = inject("app")(observer(
 				//console.log("element componentDidUpdate",this.elmt.className);
 				let update = SlashrUiElement.reducePropUpdates(prevProps, this.props);
 
-				if(update){
-					if( ! hasReacted) console.warn("Prop update has taken place without a reaction.",this.elmt.idx,this.props,this.elmt.idx,update);
-					else console.warn("Prop update reacted.",this.elmt.idx,this.props,this.elmt.idx,update);
-				}
+				// if(update){
+				// 	if( ! hasReacted) console.warn("Prop update has taken place without a reaction.",this.elmt.idx,this.props,this.elmt.idx,update);
+				// 	else console.warn("Prop update reacted.",this.elmt.idx,this.props,this.elmt.idx,update);
+				// }
 
 				// TODO: this should probably be moved
 				// this.elmt._triggerAnimationEvents();
@@ -94,10 +94,8 @@ export const _Element = inject("app")(observer(
 			this.hasReacted = true;
 			
 			if (this.elmt) {
-				console.warn("prop update element componentWillReact",this.elmt.idx,this.props);
 				this.elmt.handleReact(this.props);
 			}
-			else console.log("react no elmt");
 		}
 		get elmt() {
 			return this._metadata.elmt;
@@ -109,8 +107,6 @@ export const _Element = inject("app")(observer(
 		}
 		render() {
 			// if("transition" in this.props)
-			trace();
-			console.log(this);
 			// console.log(this.props);
 			// Moved from component will react
 			// trace();
@@ -238,7 +234,7 @@ class __Element extends React.PureComponent {
 
 		//if(this.props.forwardRef) console.log("element ref mount",this.props.className,this.props.forwardRef.current);
 		let el = React.createElement(tag, props, this.props.children);
-		if (to) el = <NavLink to={to}>{el}</NavLink>;
+		if (to) el = <RouteLink to={to}>{el}</RouteLink>;
 		return el;
 	}
 }
@@ -324,16 +320,294 @@ export const Navigation = React.forwardRef((props, ref) => (
 		{props.children}
 	</Element>
 ));
-export const Header = React.forwardRef((props, ref) => (
+
+
+export const H1 = React.forwardRef((props, ref) => (
 	<Element
 		{...props}
 		ref={ref}
-		tag="header"
+		tag="h1"
+	>
+		{props.children}
+	</Element>
+));
+export const H2 = React.forwardRef((props, ref) => (
+	<Element
+		{...props}
+		ref={ref}
+		tag="h2"
 	>
 		{props.children}
 	</Element>
 ));
 
+export const H3 = React.forwardRef((props, ref) => (
+	<Element
+		{...props}
+		ref={ref}
+		tag="h3"
+	>
+		{props.children}
+	</Element>
+));
+
+export const H4 = React.forwardRef((props, ref) => (
+	<Element
+		{...props}
+		ref={ref}
+		tag="h4"
+	>
+		{props.children}
+	</Element>
+));
+export const H5 = React.forwardRef((props, ref) => (
+	<Element
+		{...props}
+		ref={ref}
+		tag="h5"
+	>
+		{props.children}
+	</Element>
+));
+export const Ul = React.forwardRef((props, ref) => (
+	<Element
+		{...props}
+		ref={ref}
+		tag="ul"
+	>
+		{props.children}
+	</Element>
+));
+export const Li = React.forwardRef((props, ref) => (
+	<Element
+		{...props}
+		ref={ref}
+		tag="Li"
+	>
+		{props.children}
+	</Element>
+));
+
+export const Layout = Slashr.connect(
+	class Layout extends React.Component {
+		constructor(props) {
+			super(props);
+			this.ref = React.createRef();
+		}
+		render() {
+			let theme = this.props.app.mdl.ui.layout.theme;
+			let classNames = ["layout"];
+			let style = this.props.style || {};
+			if(! this.props.app.mdl.ui.layout.isScrollable){
+				classNames.push("layout-scroll-disabled");
+				style.height = "100vh";
+                style.overflow = "hidden";
+                style.position = "fixed";
+			}
+			if(theme) classNames.push(`layout-theme-${theme}`)
+			return (
+				<Container
+					{...this.props}
+					classNames = {classNames}
+					style={style}
+				>
+					{this.props.children}
+				</Container>
+			);
+		}
+	}
+);
+
+export const Header = Slashr.connect(
+	class Header extends React.Component {
+		constructor(props) {
+			super(props);
+			this.ref = React.createRef();
+			this.hasAutoHidden = false;
+			this.lastScrollY = null;
+			this.lastScrollDiffY = 0;
+			this.lastScrollYDir = "down";
+			this.doRollUp = false;
+			this.isSticky = true;
+			this.handleAutoHide = this.handleAutoHide.bind(this);
+			this.state = {
+				shouldAutohide: false,
+				height: 0,
+				isTop: true
+			};
+		}
+		handleAutoHide(){
+			this.update();
+			
+		}
+		get animate(){
+			let animate = this.hasAutoHidden ? {
+				easing: "easeOutQuad",
+				duration: 200,
+				from: {
+					transform:{
+						translateY: `-${this.state.height}px`
+					}
+				},
+				to: {
+					transform:{
+						translateY:"0px"
+					}
+				}
+			} : false;
+			// let animate = null;
+
+			if (this.state.shouldAutohide) {
+				this.hasAutoHidden = true;
+				animate = {
+					easing: "easeOutQuad",
+					duration: 200,
+					from: {
+						transform: {
+							translateY: "0px"
+						}
+					},
+					to: {
+						transform: {
+							translateY: `-${this.state.height}px`
+						}
+					}
+				};
+			}
+			return animate;
+		}
+		update(){
+			let scrollY = window.scrollY;
+			let shouldAutohide = this.state.shouldAutohide;
+			let height = this.ref.current.clientHeight;
+			let scrollYDir = "down";
+			let threshold = 120;
+			if(! this.props.app.mdl.ui.layout.isScrollable){
+				shouldAutohide = true;
+			}
+			else if (this.lastScrollY === null || scrollY < height) {
+				shouldAutohide = false;
+			}
+			else {
+				scrollYDir = (scrollY - this.lastScrollY) < 0 ? "up" : "down";
+				let scrollYDiff = scrollY - this.lastScrollY;
+				if (scrollYDir !== this.lastScrollYDir) {
+					this.lastScrollDiffY = scrollY - this.lastScrollY;
+				}
+				else this.lastScrollDiffY = this.lastScrollDiffY + scrollYDiff;
+				if (this.lastScrollDiffY > threshold) {
+					shouldAutohide = true;
+				}
+				else if (this.lastScrollDiffY < 0 && this.lastScrollDiffY < (threshold * -1)) {
+					shouldAutohide = false;
+				}
+			}
+			let isTop = (scrollY === 0 && this.lastScrollY !== scrollY);
+
+			this.lastScrollY = scrollY;
+			this.lastScrollYDir = scrollYDir;
+
+			if(this.state.isTop !== isTop || this.state.height !== height || this.state.shouldAutohide !== shouldAutohide){
+				this.setState({
+					height: height,
+					shouldAutohide: shouldAutohide,
+					isTop: isTop
+				});
+			}
+		}
+		componentDidMount(){
+
+		}
+		render() {
+			let animate = this.animate;
+			let classNames = ["header"];
+			let style = this.props.style || {};
+			if(window.scrollY === 0){
+				classNames.push("header-top");
+			}
+			return (
+				<Element
+					{...this.props}
+					classNames = {classNames}
+					style={style}
+					tag="header"
+					ref={this.ref}
+					animate={this.props.autohide && animate}
+					onObserveResize={this.props.autohide && this.handleAutoHide}
+					onWindowScroll={this.props.autohide && this.handleAutoHide}
+				>
+					{this.props.children}
+				</Element>
+			);
+		}
+	}
+);
+// value: function() {
+// 	var e = this.props.app.mdl.ui.layout.isScrollable
+// 	  , t = this.props.style || {}
+// 	  , n = this.props.classNames || [];
+// 	return n.push("main"),
+// 	e || (n.push("main-scroll-disabled"),
+// 	t.position = "relative",
+// 	t.marginTop = "-" + window.scrollY + "px"),
+// 	console.log(t),
+// 	s.a.createElement(Hh, Zs({}, this.props, {
+// 		style: t,
+// 		classNames: n,
+// 		tag: "div"
+// 	}), this.props.children)
+export const Main = Slashr.connect(
+	class Main extends React.Component {
+		constructor(props) {
+			super(props);
+			// this.ref = React.createRef();
+		}
+		render() {
+			let theme = this.props.app.mdl.ui.layout.theme;
+			let classNames = ["main"];
+
+			let style = this.props.style || {};
+			let windowScrollY = window.scrollY;
+			if(! this.props.app.mdl.ui.layout.isScrollable){
+				classNames.push("main-scroll-disabled");
+				style.height = "100vh";
+                style.marginTop = `-${windowScrollY}px`;
+                style.position = "relative";
+			}
+			return (
+				<main
+					{...this.props}
+					className = {classNames.join(" ")}
+					style={style}
+				>
+					{this.props.children}
+				</main>
+			);
+		}
+	}
+);
+
+// export class Layout extends React.Component {
+// 	constructor(props) {
+// 		super(props);
+// 		this.slashr = Slashr.getInstance();
+// 		this.handleClick = this.handleClick.bind(this);
+// 		this.routeProps = this.slashr.router.parseLinkProps(this.props);
+// 		if (!this.props.to) throw ("ContainerLink error: 'to' prop missing");
+// 	}
+// 	handleClick(e) {
+// 		if (e.target.tagName !== "A") {
+// 			this.slashr.app.router.push(this.routeProps);
+// 		}
+// 	}
+// 	render() {
+// 		return (
+// 			<div className={this.props.className} onClick={this.handleClick}>
+// 				{this.props.children}
+// 			</div>
+// 		);
+// 	}
+// };
 
 export class ContainerLink extends React.Component {
 	constructor(props) {
@@ -407,13 +681,13 @@ export const Toolbar = React.forwardRef((props, ref) => (
 		{props.children}
 	</Element>
 ));
-export const Button = React.forwardRef((props, ref) => (
-	<Element
-		{...props}
-		tag={props.tag || "button"}
-		type={props.type || "button"}
-		ref={ref}
-	>
-		{props.children}
-	</Element>
-));
+// export const Button = React.forwardRef((props, ref) => (
+// 	<Element
+// 		{...props}
+// 		tag={props.tag || "button"}
+// 		type={props.type || "button"}
+// 		ref={ref}
+// 	>
+// 		{props.children}
+// 	</Element>
+// ));

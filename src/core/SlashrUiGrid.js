@@ -150,7 +150,6 @@ export class SlashrUiGrid {
 	updateLayout() {
 		try{
 			if (this.layoutUpdater) {
-				console.log("update layout");
 				// if(this._metadata.updateLayoutTimeout) return;
 				// this._metadata.updateLayoutTimeout = setTimeout(
 					// async ()=>{
@@ -651,7 +650,6 @@ export class SlashrUiGridSection {
 		}
 	}
 	render() {
-		console.log("Grid Render: Will this react?");
 		//TODO: Kind of a hacky way to force reaction
 		this.checkUpdates();
 		return this.grid.renderSection(this);

@@ -116,12 +116,17 @@ export class MenuSliderItemDomain{
 		return this._isSelected;
 	}
 	set selected(isSelected){
-		return this._isSelected = isSelected;
+		this.setSelected(isSelected);
+	}
+	setSelected(isSelected){
+		this._isSelected = isSelected;
 	}
 }
 decorate(MenuSliderItemDomain, {
 	// className: computed,
-	_isSelected: observable
+	_isSelected: observable,
+	setSelected: action,
+	initialize: action
 });
 
 export class MenuSlider extends React.Component {
