@@ -525,6 +525,7 @@ export const Header = Slashr.connect(
 			if(window.scrollY === 0){
 				classNames.push("header-top");
 			}
+			if(this.state.shouldAutohide) classNames.push("header-autohide");
 			return (
 				<Element
 					{...this.props}
@@ -532,7 +533,7 @@ export const Header = Slashr.connect(
 					style={style}
 					tag="header"
 					ref={this.ref}
-					animate={this.props.autohide && animate}
+					// animate={this.props.autohide && animate}
 					onObserveResize={this.props.autohide && this.handleAutoHide}
 					onWindowScroll={this.props.autohide && this.handleAutoHide}
 				>
